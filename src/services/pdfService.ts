@@ -2,17 +2,17 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import { FileAnalysisResult } from './groqService';
 
-// Improved PDF.js worker setup with fallbacks
+// Improved PDF.js worker setup with proper version matching
 const setupWorker = () => {
   try {
-    // Try to use a local worker first, then fallback to CDN
-    const workerUrl = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    // Use the same version as the installed package for compatibility
+    const workerUrl = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
     pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
-    console.log('PDF.js worker configured successfully');
+    console.log('PDF.js worker configured successfully with version:', pdfjsLib.version);
   } catch (error) {
     console.error('Failed to configure PDF.js worker:', error);
-    // Fallback configuration
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+    // Fallback to a known working version
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@4.4.168/build/pdf.worker.min.js`;
   }
 };
 
@@ -37,7 +37,10 @@ export const extractPDFContent = async (file: File): Promise<PDFContent> => {
     const arrayBuffer = await file.arrayBuffer();
     console.log('File converted to array buffer, size:', arrayBuffer.byteLength);
     
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const loadingTask = pdfjsLib.getDocument({ 
+      data: arrayBuffer,
+      verbosity: 0 // Reduce console noise
+    });
     const pdf = await loadingTask.promise;
     console.log('PDF loaded successfully, pages:', pdf.numPages);
     

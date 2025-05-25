@@ -112,6 +112,7 @@ const ChatbotInterface = () => {
 
     try {
       setIsTyping(true);
+      toast.loading('Processing image...', { duration: Infinity });
       
       // Resize and convert image
       console.log('Resizing image...');
@@ -125,7 +126,7 @@ const ChatbotInterface = () => {
       const fileId = Date.now().toString();
       
       // Generate initial analysis
-      console.log('Generating image analysis...');
+      console.log('Generating image analysis with Groq Vision API...');
       const analysis = await generateVisionResponse(base64, "Analyze this image in detail. Describe what you see, including objects, people, text, colors, and any other relevant details.");
       
       // Store file
@@ -175,10 +176,12 @@ const ChatbotInterface = () => {
       setIsTyping(false);
       createRipple(30, 70);
       
+      toast.dismiss();
       toast.success('Image uploaded and analyzed successfully!');
       
     } catch (error) {
       console.error('Error processing image:', error);
+      toast.dismiss();
       toast.error(`Failed to analyze image: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsTyping(false);
     }
@@ -200,6 +203,7 @@ const ChatbotInterface = () => {
 
     try {
       setIsTyping(true);
+      toast.loading('Processing PDF...', { duration: Infinity });
       
       // Extract PDF content
       console.log('Extracting PDF content...');
@@ -265,10 +269,12 @@ const ChatbotInterface = () => {
       setIsTyping(false);
       createRipple(30, 70);
       
+      toast.dismiss();
       toast.success('PDF uploaded and analyzed successfully!');
       
     } catch (error) {
       console.error('Error processing PDF:', error);
+      toast.dismiss();
       toast.error(`Failed to process PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsTyping(false);
     }

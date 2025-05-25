@@ -90,7 +90,7 @@ export const generateVisionResponse = async (imageBase64: string, userQuestion: 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.2-11b-vision-preview',
+        model: 'llava-v1.5-7b-4096-preview',
         messages: messages,
         temperature: 0.3,
         max_tokens: 1024,
