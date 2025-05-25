@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Image, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -100,7 +101,10 @@ const ChatbotInterface = () => {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith('image/')) return;
+    if (!file || !file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file');
+      return;
+    }
 
     try {
       setIsTyping(true);
@@ -469,12 +473,13 @@ const ChatbotInterface = () => {
               {/* Upload Buttons */}
               <div className="flex space-x-2">
                 {/* Image Upload */}
-                <label className="cursor-pointer">
+                <div className="relative">
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
-                    className="hidden"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    id="image-upload"
                   />
                   <Button
                     type="button"
@@ -482,15 +487,16 @@ const ChatbotInterface = () => {
                   >
                     <Image className="w-5 h-5" />
                   </Button>
-                </label>
+                </div>
 
                 {/* PDF Upload */}
-                <label className="cursor-pointer">
+                <div className="relative">
                   <input
                     type="file"
                     accept=".pdf"
                     onChange={handlePdfUpload}
-                    className="hidden"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    id="pdf-upload"
                   />
                   <Button
                     type="button"
@@ -498,7 +504,7 @@ const ChatbotInterface = () => {
                   >
                     <FileText className="w-5 h-5" />
                   </Button>
-                </label>
+                </div>
               </div>
 
               <Button
