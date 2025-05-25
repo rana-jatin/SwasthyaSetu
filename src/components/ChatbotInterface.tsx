@@ -2,7 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Image, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { generateGroqResponse, GroqMessage } from '@/services/groqService';
+import { generateGroqResponse, generateVisionResponse, generateReasoningResponse, GroqMessage } from '@/services/groqService';
+import { extractPDFContent, searchInText } from '@/services/pdfService';
+import { fileStorageService, StoredFile } from '@/services/fileStorageService';
+import { convertImageToBase64, resizeImage } from '@/utils/imageUtils';
 import { toast } from 'sonner';
 
 interface Message {
@@ -11,9 +14,11 @@ interface Message {
   isUser: boolean;
   timestamp: Date;
   file?: {
+    id: string;
     name: string;
     type: 'image' | 'pdf';
     url: string;
+    analysis?: string;
   };
 }
 
@@ -28,7 +33,7 @@ const ChatbotInterface = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hello! I\'m your AI assistant powered by Groq. How can I help you today?',
+      text: 'Hello! I\'m your AI assistant powered by Groq. I can analyze images, extract content from PDFs, and answer questions about your uploaded files. How can I help you today?',
       isUser: false,
       timestamp: new Date()
     }
@@ -38,6 +43,7 @@ const ChatbotInterface = () => {
   const [isFocused, setIsFocused] = useState(false);
   const [particles, setParticles] = useState<ParticleProps[]>([]);
   const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
+  const [storedFiles, setStoredFiles] = useState<StoredFile[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -78,79 +84,167 @@ const ChatbotInterface = () => {
     }, 600);
   };
 
-  const handleFileUpload = (file: File, type: 'image' | 'pdf') => {
-    const fileUrl = URL.createObjectURL(file);
-    
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text: `Uploaded ${type}: ${file.name}`,
-      isUser: true,
-      timestamp: new Date(),
-      file: {
-        name: file.name,
-        type,
-        url: fileUrl
-      }
-    };
-
-    setMessages(prev => [...prev, newMessage]);
-    setIsTyping(true);
-    createRipple(50, 50);
-
-    // Generate AI response for file upload
-    setTimeout(async () => {
-      try {
-        const groqMessages: GroqMessage[] = [
-          {
-            role: 'system',
-            content: 'You are a helpful AI assistant. The user has uploaded a file. Respond helpfully about what you can do with the file.'
-          },
-          {
-            role: 'user',
-            content: `I've uploaded a ${type} file named "${file.name}". What can you help me with regarding this file?`
-          }
-        ];
-
-        const aiResponseText = await generateGroqResponse(groqMessages);
-        
-        const aiResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          text: aiResponseText,
-          isUser: false,
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, aiResponse]);
-        setIsTyping(false);
-        createRipple(30, 70);
-      } catch (error) {
-        console.error('Error generating AI response:', error);
-        const errorResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          text: 'Sorry, I encountered an error processing your file. Please try again.',
-          isUser: false,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, errorResponse]);
-        setIsTyping(false);
-        toast.error('Failed to generate response');
-      }
-    }, 1000);
+  const loadStoredFiles = async () => {
+    try {
+      await fileStorageService.init();
+      const files = await fileStorageService.getAllFiles();
+      setStoredFiles(files);
+    } catch (error) {
+      console.error('Error loading stored files:', error);
+    }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    loadStoredFiles();
+  }, []);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      handleFileUpload(file, 'image');
+    if (!file || !file.type.startsWith('image/')) return;
+
+    try {
+      setIsTyping(true);
+      
+      // Resize and convert image
+      const resizedBlob = await resizeImage(file);
+      const resizedFile = new File([resizedBlob], file.name, { type: 'image/jpeg' });
+      const base64 = await convertImageToBase64(resizedFile);
+      const fileUrl = URL.createObjectURL(resizedFile);
+      
+      const fileId = Date.now().toString();
+      
+      // Generate initial analysis
+      const analysis = await generateVisionResponse(base64, "Analyze this image in detail. Describe what you see, including objects, people, text, colors, and any other relevant details.");
+      
+      // Store file
+      const storedFile: StoredFile = {
+        id: fileId,
+        name: file.name,
+        type: 'image',
+        url: fileUrl,
+        uploadDate: new Date(),
+        analysis,
+        metadata: {
+          size: file.size,
+          originalType: file.type
+        }
+      };
+      
+      await fileStorageService.storeFile(storedFile);
+      setStoredFiles(prev => [...prev, storedFile]);
+      
+      // Add user message
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        text: `Uploaded image: ${file.name}`,
+        isUser: true,
+        timestamp: new Date(),
+        file: {
+          id: fileId,
+          name: file.name,
+          type: 'image',
+          url: fileUrl,
+          analysis
+        }
+      };
+      
+      setMessages(prev => [...prev, userMessage]);
+      
+      // Add AI response
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        text: analysis,
+        isUser: false,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, aiResponse]);
+      setIsTyping(false);
+      createRipple(30, 70);
+      
+    } catch (error) {
+      console.error('Error processing image:', error);
+      toast.error('Failed to analyze image. Please try again.');
+      setIsTyping(false);
     }
+    
     e.target.value = '';
   };
 
-  const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type === 'application/pdf') {
-      handleFileUpload(file, 'pdf');
+    if (!file || file.type !== 'application/pdf') return;
+
+    try {
+      setIsTyping(true);
+      
+      // Extract PDF content
+      const pdfContent = await extractPDFContent(file);
+      const fileUrl = URL.createObjectURL(file);
+      const fileId = Date.now().toString();
+      
+      // Generate analysis using reasoning model
+      const analysis = await generateReasoningResponse([
+        {
+          role: 'user',
+          content: `Analyze this PDF document and provide a summary. The document contains: ${pdfContent.text.substring(0, 500)}...`
+        }
+      ]);
+      
+      // Store file
+      const storedFile: StoredFile = {
+        id: fileId,
+        name: file.name,
+        type: 'pdf',
+        url: fileUrl,
+        uploadDate: new Date(),
+        analysis,
+        extractedText: pdfContent.text,
+        metadata: {
+          size: file.size,
+          numPages: pdfContent.numPages,
+          pdfMetadata: pdfContent.metadata
+        }
+      };
+      
+      await fileStorageService.storeFile(storedFile);
+      setStoredFiles(prev => [...prev, storedFile]);
+      
+      // Add user message
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        text: `Uploaded PDF: ${file.name} (${pdfContent.numPages} pages)`,
+        isUser: true,
+        timestamp: new Date(),
+        file: {
+          id: fileId,
+          name: file.name,
+          type: 'pdf',
+          url: fileUrl,
+          analysis
+        }
+      };
+      
+      setMessages(prev => [...prev, userMessage]);
+      
+      // Add AI response
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        text: `PDF uploaded successfully! I've extracted ${pdfContent.text.length} characters from ${pdfContent.numPages} pages. Here's a summary:\n\n${analysis}`,
+        isUser: false,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, aiResponse]);
+      setIsTyping(false);
+      createRipple(30, 70);
+      
+    } catch (error) {
+      console.error('Error processing PDF:', error);
+      toast.error('Failed to process PDF. Please try again.');
+      setIsTyping(false);
     }
+    
     e.target.value = '';
   };
 
@@ -171,24 +265,47 @@ const ChatbotInterface = () => {
     createRipple(50, 50);
 
     try {
-      // Prepare conversation history for Groq
-      const groqMessages: GroqMessage[] = [
-        {
-          role: 'system',
-          content: 'You are a helpful, friendly AI assistant. Provide clear and concise responses.'
-        },
-        // Include recent conversation history (last 10 messages)
-        ...messages.slice(-10).map(msg => ({
-          role: msg.isUser ? 'user' as const : 'assistant' as const,
-          content: msg.text
-        })),
-        {
-          role: 'user',
-          content: currentInput
-        }
-      ];
+      // Check if user is asking about uploaded files
+      const relevantFiles = storedFiles.filter(file => 
+        currentInput.toLowerCase().includes(file.name.toLowerCase()) ||
+        currentInput.toLowerCase().includes('image') && file.type === 'image' ||
+        currentInput.toLowerCase().includes('pdf') && file.type === 'pdf' ||
+        currentInput.toLowerCase().includes('document') && file.type === 'pdf'
+      );
 
-      const aiResponseText = await generateGroqResponse(groqMessages);
+      let aiResponseText: string;
+
+      if (relevantFiles.length > 0) {
+        // Use reasoning model with file context
+        const fileContext = relevantFiles.map(file => 
+          `File: ${file.name} (${file.type})\nAnalysis: ${file.analysis}\n${file.extractedText ? `Content: ${file.extractedText.substring(0, 1000)}...` : ''}`
+        ).join('\n\n');
+
+        aiResponseText = await generateReasoningResponse([
+          {
+            role: 'user',
+            content: currentInput
+          }
+        ], fileContext);
+      } else {
+        // Regular conversation
+        const groqMessages: GroqMessage[] = [
+          {
+            role: 'system',
+            content: 'You are a helpful, friendly AI assistant. Provide clear and concise responses.'
+          },
+          ...messages.slice(-10).map(msg => ({
+            role: msg.isUser ? 'user' as const : 'assistant' as const,
+            content: msg.text
+          })),
+          {
+            role: 'user',
+            content: currentInput
+          }
+        ];
+
+        aiResponseText = await generateGroqResponse(groqMessages);
+      }
       
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
@@ -257,7 +374,7 @@ const ChatbotInterface = () => {
         <div className="mb-6">
           <div className="backdrop-blur-md bg-glass-white border border-glass-border rounded-3xl p-6 shadow-2xl">
             <h1 className="text-3xl font-bold text-white mb-2">AI Assistant</h1>
-            <p className="text-gray-300">Your intelligent companion for conversations</p>
+            <p className="text-gray-300">Your intelligent companion for conversations, image analysis, and document processing</p>
           </div>
         </div>
 
@@ -297,7 +414,7 @@ const ChatbotInterface = () => {
                         )}
                       </div>
                     )}
-                    <p className="text-sm leading-relaxed">{message.text}</p>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
                     <p className={cn(
                       "text-xs mt-2 opacity-70",
                       message.isUser ? "text-blue-100" : "text-gray-400"
@@ -344,7 +461,7 @@ const ChatbotInterface = () => {
                   onKeyPress={handleKeyPress}
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
-                  placeholder="Type your message..."
+                  placeholder="Ask me about your uploaded files or anything else..."
                   className="w-full bg-transparent text-white placeholder-gray-400 focus:outline-none text-lg"
                 />
               </div>
