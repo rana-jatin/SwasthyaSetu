@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Image, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { generateGroqResponse, GroqMessage } from '@/services/groqService';
+import { toast } from 'sonner';
 
 interface Message {
   id: string;
@@ -26,7 +28,7 @@ const ChatbotInterface = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hello! I\'m your AI assistant. How can I help you today?',
+      text: 'Hello! I\'m your AI assistant powered by Groq. How can I help you today?',
       isUser: false,
       timestamp: new Date()
     }
@@ -93,29 +95,47 @@ const ChatbotInterface = () => {
 
     setMessages(prev => [...prev, newMessage]);
     setIsTyping(true);
-
-    // Create ripple effect
     createRipple(50, 50);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const responses = [
-        `I can see you've uploaded a ${type}. Let me analyze it for you.`,
-        `Thanks for sharing the ${type} file. What would you like me to help you with regarding this file?`,
-        `I've received your ${type} upload. How can I assist you with this file?`
-      ];
-      
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: responses[Math.floor(Math.random() * responses.length)],
-        isUser: false,
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, aiResponse]);
-      setIsTyping(false);
-      createRipple(30, 70);
-    }, 2000);
+    // Generate AI response for file upload
+    setTimeout(async () => {
+      try {
+        const groqMessages: GroqMessage[] = [
+          {
+            role: 'system',
+            content: 'You are a helpful AI assistant. The user has uploaded a file. Respond helpfully about what you can do with the file.'
+          },
+          {
+            role: 'user',
+            content: `I've uploaded a ${type} file named "${file.name}". What can you help me with regarding this file?`
+          }
+        ];
+
+        const aiResponseText = await generateGroqResponse(groqMessages);
+        
+        const aiResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          text: aiResponseText,
+          isUser: false,
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, aiResponse]);
+        setIsTyping(false);
+        createRipple(30, 70);
+      } catch (error) {
+        console.error('Error generating AI response:', error);
+        const errorResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          text: 'Sorry, I encountered an error processing your file. Please try again.',
+          isUser: false,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, errorResponse]);
+        setIsTyping(false);
+        toast.error('Failed to generate response');
+      }
+    }, 1000);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,25 +165,34 @@ const ChatbotInterface = () => {
     };
 
     setMessages(prev => [...prev, newMessage]);
+    const currentInput = inputValue;
     setInputValue('');
     setIsTyping(true);
-
-    // Create ripple effect
     createRipple(50, 50);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const responses = [
-        "That's an interesting question! Let me think about that...",
-        "I understand what you're asking. Here's my perspective:",
-        "Great point! I'd be happy to help you with that.",
-        "Thanks for sharing that with me. Here's what I think:",
-        "That's a fascinating topic. Let me provide some insights:"
+    try {
+      // Prepare conversation history for Groq
+      const groqMessages: GroqMessage[] = [
+        {
+          role: 'system',
+          content: 'You are a helpful, friendly AI assistant. Provide clear and concise responses.'
+        },
+        // Include recent conversation history (last 10 messages)
+        ...messages.slice(-10).map(msg => ({
+          role: msg.isUser ? 'user' as const : 'assistant' as const,
+          content: msg.text
+        })),
+        {
+          role: 'user',
+          content: currentInput
+        }
       ];
+
+      const aiResponseText = await generateGroqResponse(groqMessages);
       
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: responses[Math.floor(Math.random() * responses.length)],
+        text: aiResponseText,
         isUser: false,
         timestamp: new Date()
       };
@@ -171,7 +200,18 @@ const ChatbotInterface = () => {
       setMessages(prev => [...prev, aiResponse]);
       setIsTyping(false);
       createRipple(30, 70);
-    }, 2000);
+    } catch (error) {
+      console.error('Error generating AI response:', error);
+      const errorResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        text: 'Sorry, I encountered an error generating a response. Please try again.',
+        isUser: false,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorResponse]);
+      setIsTyping(false);
+      toast.error('Failed to generate response');
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
