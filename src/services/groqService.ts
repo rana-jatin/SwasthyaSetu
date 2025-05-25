@@ -26,6 +26,8 @@ export interface FileAnalysisResult {
 
 export const generateGroqResponse = async (messages: GroqMessage[]): Promise<string> => {
   try {
+    console.log('Calling Groq API with messages:', messages.length);
+    
     const response = await fetch(GROQ_API_URL, {
       method: 'POST',
       headers: {
@@ -41,10 +43,13 @@ export const generateGroqResponse = async (messages: GroqMessage[]): Promise<str
     });
 
     if (!response.ok) {
-      throw new Error(`Groq API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Groq API error:', response.status, errorText);
+      throw new Error(`Groq API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('Groq API response received');
     return data.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
   } catch (error) {
     console.error('Error calling Groq API:', error);
@@ -54,6 +59,8 @@ export const generateGroqResponse = async (messages: GroqMessage[]): Promise<str
 
 export const generateVisionResponse = async (imageBase64: string, userQuestion: string): Promise<string> => {
   try {
+    console.log('Calling Groq Vision API for image analysis');
+    
     const messages: GroqMessage[] = [
       {
         role: 'system',
@@ -83,7 +90,7 @@ export const generateVisionResponse = async (imageBase64: string, userQuestion: 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
+        model: 'llama-3.2-11b-vision-preview',
         messages: messages,
         temperature: 0.3,
         max_tokens: 1024,
@@ -91,10 +98,13 @@ export const generateVisionResponse = async (imageBase64: string, userQuestion: 
     });
 
     if (!response.ok) {
-      throw new Error(`Groq Vision API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Groq Vision API error:', response.status, errorText);
+      throw new Error(`Groq Vision API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('Groq Vision API response received');
     return data.choices[0]?.message?.content || 'Sorry, I could not analyze the image.';
   } catch (error) {
     console.error('Error calling Groq Vision API:', error);
@@ -104,6 +114,8 @@ export const generateVisionResponse = async (imageBase64: string, userQuestion: 
 
 export const generateReasoningResponse = async (messages: GroqMessage[], context?: string): Promise<string> => {
   try {
+    console.log('Calling Groq Reasoning API');
+    
     const systemMessage = context 
       ? `You are a helpful AI assistant with advanced reasoning capabilities. Use the following context to answer questions: ${context}`
       : 'You are a helpful AI assistant with advanced reasoning capabilities. Provide detailed, logical responses to complex questions.';
@@ -115,7 +127,7 @@ export const generateReasoningResponse = async (messages: GroqMessage[], context
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'qwen-qwq-32b',
+        model: 'llama-3.1-70b-versatile',
         messages: [
           {
             role: 'system',
@@ -129,10 +141,13 @@ export const generateReasoningResponse = async (messages: GroqMessage[], context
     });
 
     if (!response.ok) {
-      throw new Error(`Groq Reasoning API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Groq Reasoning API error:', response.status, errorText);
+      throw new Error(`Groq Reasoning API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('Groq Reasoning API response received');
     return data.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
   } catch (error) {
     console.error('Error calling Groq Reasoning API:', error);

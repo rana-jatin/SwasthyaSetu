@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Image, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -100,27 +99,37 @@ const ChatbotInterface = () => {
   }, []);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('Image upload triggered');
+    
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith('image/')) {
+      console.error('Invalid file type selected');
       toast.error('Please select a valid image file');
       return;
     }
+
+    console.log('Processing image file:', file.name, file.size);
 
     try {
       setIsTyping(true);
       
       // Resize and convert image
+      console.log('Resizing image...');
       const resizedBlob = await resizeImage(file);
       const resizedFile = new File([resizedBlob], file.name, { type: 'image/jpeg' });
+      
+      console.log('Converting to base64...');
       const base64 = await convertImageToBase64(resizedFile);
       const fileUrl = URL.createObjectURL(resizedFile);
       
       const fileId = Date.now().toString();
       
       // Generate initial analysis
+      console.log('Generating image analysis...');
       const analysis = await generateVisionResponse(base64, "Analyze this image in detail. Describe what you see, including objects, people, text, colors, and any other relevant details.");
       
       // Store file
+      console.log('Storing file...');
       const storedFile: StoredFile = {
         id: fileId,
         name: file.name,
@@ -166,9 +175,11 @@ const ChatbotInterface = () => {
       setIsTyping(false);
       createRipple(30, 70);
       
+      toast.success('Image uploaded and analyzed successfully!');
+      
     } catch (error) {
       console.error('Error processing image:', error);
-      toast.error('Failed to analyze image. Please try again.');
+      toast.error(`Failed to analyze image: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsTyping(false);
     }
     
@@ -176,18 +187,28 @@ const ChatbotInterface = () => {
   };
 
   const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('PDF upload triggered');
+    
     const file = e.target.files?.[0];
-    if (!file || file.type !== 'application/pdf') return;
+    if (!file || file.type !== 'application/pdf') {
+      console.error('Invalid file type selected');
+      toast.error('Please select a valid PDF file');
+      return;
+    }
+
+    console.log('Processing PDF file:', file.name, file.size);
 
     try {
       setIsTyping(true);
       
       // Extract PDF content
+      console.log('Extracting PDF content...');
       const pdfContent = await extractPDFContent(file);
       const fileUrl = URL.createObjectURL(file);
       const fileId = Date.now().toString();
       
       // Generate analysis using reasoning model
+      console.log('Generating PDF analysis...');
       const analysis = await generateReasoningResponse([
         {
           role: 'user',
@@ -196,6 +217,7 @@ const ChatbotInterface = () => {
       ]);
       
       // Store file
+      console.log('Storing PDF file...');
       const storedFile: StoredFile = {
         id: fileId,
         name: file.name,
@@ -243,9 +265,11 @@ const ChatbotInterface = () => {
       setIsTyping(false);
       createRipple(30, 70);
       
+      toast.success('PDF uploaded and analyzed successfully!');
+      
     } catch (error) {
       console.error('Error processing PDF:', error);
-      toast.error('Failed to process PDF. Please try again.');
+      toast.error(`Failed to process PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsTyping(false);
     }
     
@@ -478,12 +502,14 @@ const ChatbotInterface = () => {
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     id="image-upload"
+                    aria-label="Upload image"
                   />
                   <Button
                     type="button"
-                    className="rounded-2xl p-3 transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg"
+                    className="rounded-2xl p-3 transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg relative z-0"
+                    disabled={isTyping}
                   >
                     <Image className="w-5 h-5" />
                   </Button>
@@ -495,12 +521,14 @@ const ChatbotInterface = () => {
                     type="file"
                     accept=".pdf"
                     onChange={handlePdfUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     id="pdf-upload"
+                    aria-label="Upload PDF"
                   />
                   <Button
                     type="button"
-                    className="rounded-2xl p-3 transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg"
+                    className="rounded-2xl p-3 transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg relative z-0"
+                    disabled={isTyping}
                   >
                     <FileText className="w-5 h-5" />
                   </Button>
@@ -509,10 +537,10 @@ const ChatbotInterface = () => {
 
               <Button
                 onClick={handleSend}
-                disabled={!inputValue.trim()}
+                disabled={!inputValue.trim() || isTyping}
                 className={cn(
                   "rounded-2xl p-3 transition-all duration-300 transform hover:scale-110 active:scale-95",
-                  inputValue.trim()
+                  inputValue.trim() && !isTyping
                     ? "bg-gradient-to-r from-electric-blue to-blue-500 hover:from-blue-500 hover:to-electric-blue shadow-lg hover:shadow-electric-blue/50"
                     : "bg-gray-600 cursor-not-allowed"
                 )}
