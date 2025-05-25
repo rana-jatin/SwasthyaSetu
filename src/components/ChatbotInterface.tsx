@@ -120,21 +120,18 @@ const ChatbotInterface = () => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-teal-800">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-green-900 via-emerald-800 to-blue-900">
       {/* Animated Background Particles */}
       <div className="absolute inset-0 overflow-hidden">
         {particles.map((particle) => (
           <div
             key={particle.id}
-            className="absolute w-2 h-2 bg-electric-blue rounded-full opacity-30"
+            className="absolute w-2 h-2 bg-electric-blue rounded-full opacity-30 animate-particle-float"
             style={{
               left: `${particle.x}%`,
               top: `${particle.y}%`,
               animationDelay: `${particle.delay}s`
             }}
-            className={cn(
-              "absolute w-2 h-2 bg-electric-blue rounded-full animate-particle-float"
-            )}
           />
         ))}
       </div>
