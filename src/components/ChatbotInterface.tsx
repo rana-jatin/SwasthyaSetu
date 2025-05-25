@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Image, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -9,6 +8,11 @@ interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  file?: {
+    name: string;
+    type: 'image' | 'pdf';
+    url: string;
+  };
 }
 
 interface ParticleProps {
@@ -70,6 +74,64 @@ const ChatbotInterface = () => {
     setTimeout(() => {
       setRipples(prev => prev.filter(ripple => ripple.id !== newRipple.id));
     }, 600);
+  };
+
+  const handleFileUpload = (file: File, type: 'image' | 'pdf') => {
+    const fileUrl = URL.createObjectURL(file);
+    
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      text: `Uploaded ${type}: ${file.name}`,
+      isUser: true,
+      timestamp: new Date(),
+      file: {
+        name: file.name,
+        type,
+        url: fileUrl
+      }
+    };
+
+    setMessages(prev => [...prev, newMessage]);
+    setIsTyping(true);
+
+    // Create ripple effect
+    createRipple(50, 50);
+
+    // Simulate AI response
+    setTimeout(() => {
+      const responses = [
+        `I can see you've uploaded a ${type}. Let me analyze it for you.`,
+        `Thanks for sharing the ${type} file. What would you like me to help you with regarding this file?`,
+        `I've received your ${type} upload. How can I assist you with this file?`
+      ];
+      
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        text: responses[Math.floor(Math.random() * responses.length)],
+        isUser: false,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, aiResponse]);
+      setIsTyping(false);
+      createRipple(30, 70);
+    }, 2000);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      handleFileUpload(file, 'image');
+    }
+    e.target.value = '';
+  };
+
+  const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type === 'application/pdf') {
+      handleFileUpload(file, 'pdf');
+    }
+    e.target.value = '';
   };
 
   const handleSend = async () => {
@@ -179,6 +241,22 @@ const ChatbotInterface = () => {
                         : "bg-glass-white border border-glass-border text-gray-100 mr-4"
                     )}
                   >
+                    {message.file && (
+                      <div className="mb-2">
+                        {message.file.type === 'image' ? (
+                          <img 
+                            src={message.file.url} 
+                            alt={message.file.name}
+                            className="max-w-full h-32 object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div className="flex items-center space-x-2 p-2 bg-black/20 rounded-lg">
+                            <FileText className="w-4 h-4" />
+                            <span className="text-xs truncate">{message.file.name}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <p className="text-sm leading-relaxed">{message.text}</p>
                     <p className={cn(
                       "text-xs mt-2 opacity-70",
@@ -230,6 +308,42 @@ const ChatbotInterface = () => {
                   className="w-full bg-transparent text-white placeholder-gray-400 focus:outline-none text-lg"
                 />
               </div>
+              
+              {/* Upload Buttons */}
+              <div className="flex space-x-2">
+                {/* Image Upload */}
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    className="rounded-2xl p-3 transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg"
+                  >
+                    <Image className="w-5 h-5" />
+                  </Button>
+                </label>
+
+                {/* PDF Upload */}
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={handlePdfUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    className="rounded-2xl p-3 transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg"
+                  >
+                    <FileText className="w-5 h-5" />
+                  </Button>
+                </label>
+              </div>
+
               <Button
                 onClick={handleSend}
                 disabled={!inputValue.trim()}
