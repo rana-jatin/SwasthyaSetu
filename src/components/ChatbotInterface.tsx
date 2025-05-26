@@ -33,7 +33,7 @@ const ChatbotInterface = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hello! I\'m your AI assistant powered by Groq. I can analyze images, extract content from PDFs, and answer questions about your uploaded files. How can I help you today?',
+      text: 'Hello! I\'m your AI assistant powered by ARC Reactor. I can analyze images, extract content from PDFs, and answer questions about your uploaded files. How can I help you today?',
       isUser: false,
       timestamp: new Date()
     }
@@ -326,7 +326,7 @@ const ChatbotInterface = () => {
         const groqMessages: GroqMessage[] = [
           {
             role: 'system',
-            content: 'You are a helpful, friendly AI assistant. Provide clear and concise responses.'
+            content: 'You are a helpful, friendly AI assistant named Ashvin. Provide clear and concise responses.Also Keep your Ayurveda Knowledge.'
           },
           ...messages.slice(-10).map(msg => ({
             role: msg.isUser ? 'user' as const : 'assistant' as const,
@@ -407,8 +407,8 @@ const ChatbotInterface = () => {
         {/* Header */}
         <div className="mb-6">
           <div className="backdrop-blur-md bg-glass-white border border-glass-border rounded-3xl p-6 shadow-2xl">
-            <h1 className="text-3xl font-bold text-white mb-2">AI Assistant</h1>
-            <p className="text-gray-300">Your intelligent companion for conversations, image analysis, and document processing</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Your Health Companion</h1>
+            <p className="text-gray-300">Your intelligent companion for Health conversations, scan analysis, and lab reports processing</p>
           </div>
         </div>
 
