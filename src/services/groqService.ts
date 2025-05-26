@@ -1,3 +1,4 @@
+import {generateMoEMedicalResponse} from './moeMedicalGroq';
 
 const GROQ_API_KEY = "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";
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
@@ -35,7 +36,7 @@ export const generateGroqResponse = async (messages: GroqMessage[]): Promise<str
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama3-8b-8192',
+        model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
         messages: messages,
         temperature: 0.7,
         max_tokens: 1024,
@@ -117,17 +118,18 @@ export const generateReasoningResponse = async (messages: GroqMessage[], context
     console.log('Calling Groq Reasoning API');
     
     const systemMessage = context 
-      ? `You are a helpful AI assistant with advanced reasoning capabilities. Use the following context to answer questions: ${context}`
-      : 'You are a helpful AI assistant with advanced reasoning capabilities. Provide detailed, logical responses to complex questions.';
+      ? `You are a helpful AI assistant developed group of researchers with advanced reasoning capabilities. Use the following context to answer questions: ${context}`
+      : 'You are a helpful AI assistant developed group of researchers with advanced reasoning capabilities. Provide detailed, logical responses to complex questions.';
 
-    const response = await fetch(GROQ_API_URL, {
+   // const response = await generateMoEMedicalResponse(context);
+    const l= await fetch(GROQ_API_URL, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${GROQ_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-70b-versatile',
+        model: 'deepseek-r1-distill-llama-70b',
         messages: [
           {
             role: 'system',
