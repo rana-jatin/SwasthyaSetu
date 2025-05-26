@@ -1,17 +1,6 @@
-import * as pdfjsLib from 'pdfjs-dist';
-import { FileAnalysisResult } from './groqService';
 
-// Configure PDF.js worker to use CDN version
-const setupWorker = () => {
-  console.log('Setting up PDF.js worker with version:', pdfjsLib.version);
-  
-  // Use CDN worker which is browser-compatible
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
-  console.log('PDF.js worker configured with CDN path');
-};
-
-// Initialize worker on module load
-setupWorker();
+import { convertPDFToImages, extractBase64FromDataUrl } from './pdfToImageService';
+import { generateVisionResponse } from './groqService';
 
 export interface PDFContent {
   text: string;
@@ -22,74 +11,66 @@ export interface PDFContent {
     subject?: string;
     creator?: string;
   };
+  pageAnalyses?: string[];
 }
 
 export const extractPDFContent = async (file: File): Promise<PDFContent> => {
   try {
-    console.log('Starting PDF extraction for file:', file.name, 'Size:', file.size);
+    console.log('Starting PDF extraction using vision model for file:', file.name);
     
-    const arrayBuffer = await file.arrayBuffer();
-    console.log('File converted to array buffer, size:', arrayBuffer.byteLength);
+    // Convert PDF pages to images
+    const pageImages = await convertPDFToImages(file);
+    console.log(`Converted ${pageImages.length} pages to images`);
     
-    const loadingTask = pdfjsLib.getDocument({
-      data: arrayBuffer,
-      verbosity: 0,
-      useWorkerFetch: false,
-      isEvalSupported: false
-    });
-    
-    console.log('Loading PDF document...');
-    const pdf = await Promise.race([
-      loadingTask.promise,
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('PDF loading timeout')), 20000)
-      )
-    ]) as any;
-    
-    console.log('PDF loaded successfully, pages:', pdf.numPages);
-    
+    const pageAnalyses: string[] = [];
     let fullText = '';
-    const numPages = pdf.numPages;
     
-    // Extract text from all pages
-    for (let i = 1; i <= numPages; i++) {
-      console.log(`Extracting text from page ${i}/${numPages}`);
+    // Process each page with vision model
+    for (const pageImage of pageImages) {
       try {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
+        console.log(`Analyzing page ${pageImage.pageNumber} with vision model`);
         
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(' ');
-        fullText += pageText + '\n';
+        const base64Image = extractBase64FromDataUrl(pageImage.imageDataUrl);
         
-        console.log(`Page ${i} extracted, text length: ${pageText.length}`);
+        const prompt = `Extract all text content from this PDF page. Please provide:
+1. All visible text in the exact order it appears
+2. Preserve formatting, bullet points, and structure
+3. Include any headers, footers, and captions
+4. If there are tables, preserve the tabular structure
+5. If no text is visible, respond with "[No text content on this page]"
+
+Please provide only the extracted text without additional commentary.`;
+        
+        const pageAnalysis = await generateVisionResponse(base64Image, prompt);
+        pageAnalyses.push(pageAnalysis);
+        
+        // Add page text to full text with page separator
+        if (pageAnalysis && !pageAnalysis.includes('[No text content on this page]')) {
+          fullText += `\n--- Page ${pageImage.pageNumber} ---\n${pageAnalysis}\n`;
+        }
+        
+        console.log(`Page ${pageImage.pageNumber} analysis completed`);
       } catch (pageError) {
-        console.error(`Error extracting text from page ${i}:`, pageError);
-        fullText += `[Page ${i} could not be processed]\n`;
+        console.error(`Error analyzing page ${pageImage.pageNumber}:`, pageError);
+        pageAnalyses.push(`[Error processing page ${pageImage.pageNumber}]`);
+        fullText += `\n--- Page ${pageImage.pageNumber} ---\n[Error processing page]\n`;
       }
     }
     
-    // Get PDF metadata
-    let metadata = {};
-    try {
-      const metadataResult = await pdf.getMetadata();
-      metadata = metadataResult.info || {};
-      console.log('PDF metadata extracted:', metadata);
-    } catch (metadataError) {
-      console.error('Error extracting PDF metadata:', metadataError);
-    }
-    
-    console.log('PDF extraction completed. Total text length:', fullText.length);
+    console.log('PDF extraction completed using vision model. Total text length:', fullText.length);
     
     if (fullText.trim().length === 0) {
-      throw new Error('No text content found in PDF');
+      throw new Error('No text content could be extracted from the PDF');
     }
     
     return {
       text: fullText.trim(),
-      numPages,
-      metadata
+      numPages: pageImages.length,
+      metadata: {
+        title: file.name,
+        creator: 'Vision-based extraction'
+      },
+      pageAnalyses
     };
   } catch (error) {
     console.error('Error extracting PDF content:', error);
@@ -97,8 +78,6 @@ export const extractPDFContent = async (file: File): Promise<PDFContent> => {
     if (error instanceof Error) {
       if (error.message.includes('timeout')) {
         throw new Error('PDF processing timed out. Please try a smaller file.');
-      } else if (error.message.includes('worker')) {
-        throw new Error('PDF processing service is temporarily unavailable. Please try again in a moment.');
       }
     }
     
