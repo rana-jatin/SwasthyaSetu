@@ -20,20 +20,7 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  assetsInclude: ['**/*.worker.js', '**/*.worker.min.js'],
   optimizeDeps: {
     include: ['pdfjs-dist']
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name?.endsWith('.worker.min.js')) {
-            return '[name][extname]';
-          }
-          return 'assets/[name]-[hash][extname]';
-        }
-      }
-    }
   }
 }));
