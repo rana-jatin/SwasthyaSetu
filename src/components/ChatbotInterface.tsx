@@ -482,7 +482,7 @@ const ChatbotInterface = () => {
           <div className={cn(
             "backdrop-blur-md bg-glass-white border rounded-3xl shadow-2xl transition-all duration-300",
             isFocused 
-              ? "border-electric-blue animate-pulse-glow" 
+              ? "border-electric-blue" 
               : "border-glass-border"
           )}>
             <div className="flex items-end p-4 space-x-4">
