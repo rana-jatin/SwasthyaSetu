@@ -113,19 +113,19 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md bg-gray-900 border-gray-700 text-white">
+      <DialogContent className="w-[95vw] max-w-md sm:max-w-lg bg-gray-900 border-gray-700 text-white mx-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-white">
+          <DialogTitle className="flex items-center gap-2 text-white text-lg sm:text-xl">
             {fileType === 'image' ? <Image className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
             Upload {fileType === 'image' ? 'Image' : 'PDF'}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* File Upload Area */}
+          {/* File Upload Area - Mobile Optimized */}
           <div
             className={cn(
-              "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer",
+              "border-2 border-dashed rounded-lg p-4 sm:p-6 text-center transition-colors cursor-pointer min-h-[120px] sm:min-h-[140px]",
               dragActive ? "border-blue-400 bg-blue-400/10" : "border-gray-600 hover:border-gray-500",
               selectedFile && "border-green-500 bg-green-500/10"
             )}
@@ -147,17 +147,17 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center justify-center gap-2 text-green-400">
                   {fileType === 'image' ? <Image className="w-6 h-6" /> : <FileText className="w-6 h-6" />}
-                  <span className="font-medium">File Selected</span>
+                  <span className="font-medium text-sm sm:text-base">File Selected</span>
                 </div>
-                <p className="text-sm text-gray-300">{selectedFile.name}</p>
+                <p className="text-sm text-gray-300 break-words px-2">{selectedFile.name}</p>
                 <p className="text-xs text-gray-400">
                   {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
                 </p>
               </div>
             ) : (
               <div className="space-y-2">
-                <Upload className="w-8 h-8 text-gray-400 mx-auto" />
-                <p className="text-gray-300">
+                <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 mx-auto" />
+                <p className="text-gray-300 text-sm sm:text-base px-2">
                   Drag & drop your {fileType} here, or click to browse
                 </p>
                 <p className="text-xs text-gray-400">
@@ -167,7 +167,7 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
             )}
           </div>
 
-          {/* Query Input */}
+          {/* Query Input - Mobile Optimized */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-300">
               What would you like me to analyze? (Optional)
@@ -176,21 +176,21 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={`Enter your specific question or analysis request...`}
-              className="bg-gray-800 border-gray-600 text-white placeholder-gray-400 min-h-[80px]"
+              className="bg-gray-800 border-gray-600 text-white placeholder-gray-400 min-h-[80px] text-sm resize-none"
             />
           </div>
 
-          {/* Example Queries */}
+          {/* Example Queries - Mobile Optimized */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-300">
               Example queries:
             </label>
-            <div className="grid gap-1">
+            <div className="grid gap-1 max-h-24 sm:max-h-32 overflow-y-auto">
               {exampleQueries.map((example, index) => (
                 <button
                   key={index}
                   onClick={() => handleExampleClick(example)}
-                  className="text-xs text-left text-blue-400 hover:text-blue-300 p-1 rounded hover:bg-gray-800 transition-colors"
+                  className="text-xs text-left text-blue-400 hover:text-blue-300 p-1.5 sm:p-2 rounded hover:bg-gray-800 transition-colors min-h-[44px] sm:min-h-auto flex items-center"
                 >
                   • {example}
                 </button>
@@ -199,19 +199,19 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 flex-col sm:flex-row">
           <Button
             variant="outline"
             onClick={handleClose}
             disabled={isProcessing}
-            className="border-gray-600 text-gray-300 hover:bg-gray-800"
+            className="border-gray-600 text-gray-300 hover:bg-gray-800 w-full sm:w-auto min-h-[44px]"
           >
             Cancel
           </Button>
           <Button
             onClick={handleUpload}
             disabled={!selectedFile || isProcessing}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto min-h-[44px]"
           >
             {isProcessing ? 'Processing...' : 'Upload & Analyze'}
           </Button>

@@ -67,11 +67,13 @@ const ChatbotInterface = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Generate floating particles
+  // Generate fewer particles on mobile for better performance
   useEffect(() => {
     const generateParticles = () => {
+      const isMobile = window.innerWidth < 768;
+      const particleCount = isMobile ? 8 : 20;
       const newParticles: ParticleProps[] = [];
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < particleCount; i++) {
         newParticles.push({
           id: i,
           x: Math.random() * 100,
@@ -406,12 +408,12 @@ const ChatbotInterface = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-green-900 via-emerald-800 to-blue-900">
-      {/* Animated Background Particles */}
+      {/* Animated Background Particles - Reduced opacity on mobile */}
       <div className="absolute inset-0 overflow-hidden">
         {particles.map((particle) => (
           <div
             key={particle.id}
-            className="absolute w-2 h-2 bg-electric-blue rounded-full opacity-30 animate-particle-float"
+            className="absolute w-1.5 h-1.5 md:w-2 md:h-2 bg-electric-blue rounded-full opacity-20 md:opacity-30 animate-particle-float"
             style={{
               left: `${particle.x}%`,
               top: `${particle.y}%`,
@@ -434,33 +436,35 @@ const ChatbotInterface = () => {
         />
       ))}
 
-      {/* Main Chat Container */}
-      <div className="relative z-10 flex flex-col h-screen max-w-4xl mx-auto p-4">
-        {/* Header with Settings */}
-        <div className="mb-6">
-          <div className="backdrop-blur-md bg-glass-white border border-glass-border rounded-3xl p-6 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-white mb-2">Your Advanced Health Companion</h1>
-                <p className="text-gray-300">Intelligent companion with medical experts, conversation memory, and smart suggestions</p>
+      {/* Main Chat Container - Responsive */}
+      <div className="relative z-10 flex flex-col h-screen w-full max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-4xl mx-auto p-2 sm:p-4">
+        {/* Header with Settings - Mobile Optimized */}
+        <div className="mb-4 sm:mb-6">
+          <div className="backdrop-blur-md bg-glass-white border border-glass-border rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-2xl">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+              <div className="w-full sm:w-auto">
+                <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2">Your Advanced Health Companion</h1>
+                <p className="text-sm sm:text-base text-gray-300 hidden sm:block">Intelligent companion with medical experts, conversation memory, and smart suggestions</p>
+                <p className="text-xs text-gray-300 sm:hidden">AI health companion with medical experts</p>
               </div>
               
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Button
                   onClick={() => setUseMedicalExperts(!useMedicalExperts)}
                   variant={useMedicalExperts ? "default" : "secondary"}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 min-h-[44px]"
                 >
-                  <Stethoscope className="w-4 h-4" />
-                  {useMedicalExperts ? 'Medical AI On' : 'Medical AI Off'}
+                  <Stethoscope className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">{useMedicalExperts ? 'Medical AI On' : 'Medical AI Off'}</span>
+                  <span className="sm:hidden">{useMedicalExperts ? 'Medical On' : 'Medical Off'}</span>
                 </Button>
                 
                 <SettingsPanel
                   useMedicalExperts={useMedicalExperts}
                   onToggleMedicalExperts={setUseMedicalExperts}
                 >
-                  <Button variant="ghost" size="icon">
-                    <Settings className="w-5 h-5" />
+                  <Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px]">
+                    <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
                   </Button>
                 </SettingsPanel>
               </div>
@@ -468,10 +472,10 @@ const ChatbotInterface = () => {
           </div>
         </div>
 
-        {/* Messages Container */}
+        {/* Messages Container - Mobile Optimized */}
         <div className="flex-1 overflow-hidden">
-          <div className="backdrop-blur-md bg-glass-white border border-glass-border rounded-3xl h-full shadow-2xl">
-            <div className="h-full overflow-y-auto p-6 space-y-4">
+          <div className="backdrop-blur-md bg-glass-white border border-glass-border rounded-2xl sm:rounded-3xl h-full shadow-2xl">
+            <div className="h-full overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4">
               {/* Smart Suggestions */}
               {lastAiMessage && (
                 <SmartSuggestions
@@ -503,15 +507,15 @@ const ChatbotInterface = () => {
           </div>
         </div>
 
-        {/* Input Area */}
-        <div className="mt-6">
+        {/* Input Area - Mobile Optimized */}
+        <div className="mt-4 sm:mt-6">
           <div className={cn(
-            "backdrop-blur-md bg-glass-white border rounded-3xl shadow-2xl transition-all duration-300",
+            "backdrop-blur-md bg-glass-white border rounded-2xl sm:rounded-3xl shadow-2xl transition-all duration-300",
             isFocused 
               ? "border-electric-blue" 
               : "border-glass-border"
           )}>
-            <div className="flex items-end p-4 space-x-4">
+            <div className="flex items-end p-3 sm:p-4 space-x-2 sm:space-x-4">
               <div className="flex-1">
                 <input
                   ref={inputRef}
@@ -522,26 +526,26 @@ const ChatbotInterface = () => {
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
                   placeholder="Ask me about your uploaded files or any health-related question..."
-                  className="w-full bg-transparent text-white placeholder-gray-400 focus:outline-none text-lg"
+                  className="w-full bg-transparent text-white placeholder-gray-400 focus:outline-none text-sm sm:text-lg"
                 />
               </div>
               
-              {/* Upload Buttons */}
-              <div className="flex space-x-2">
+              {/* Upload Buttons - Touch Optimized */}
+              <div className="flex space-x-1 sm:space-x-2">
                 <Button
                   onClick={openImageUpload}
-                  className="rounded-2xl p-3 transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg"
+                  className="rounded-xl sm:rounded-2xl p-2 sm:p-3 min-h-[44px] min-w-[44px] transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg"
                   disabled={typingState.isTyping}
                 >
-                  <Image className="w-5 h-5" />
+                  <Image className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Button>
 
                 <Button
                   onClick={openPdfUpload}
-                  className="rounded-2xl p-3 transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg"
+                  className="rounded-xl sm:rounded-2xl p-2 sm:p-3 min-h-[44px] min-w-[44px] transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg"
                   disabled={typingState.isTyping}
                 >
-                  <FileText className="w-5 h-5" />
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Button>
               </div>
 
@@ -549,35 +553,37 @@ const ChatbotInterface = () => {
                 onClick={() => handleSend()}
                 disabled={!inputValue.trim() || typingState.isTyping}
                 className={cn(
-                  "rounded-2xl p-3 transition-all duration-300 transform hover:scale-110 active:scale-95",
+                  "rounded-xl sm:rounded-2xl p-2 sm:p-3 min-h-[44px] min-w-[44px] transition-all duration-300 transform hover:scale-110 active:scale-95",
                   inputValue.trim() && !typingState.isTyping
                     ? "bg-gradient-to-r from-electric-blue to-blue-500 hover:from-blue-500 hover:to-electric-blue shadow-lg hover:shadow-electric-blue/50"
                     : "bg-gray-600 cursor-not-allowed"
                 )}
               >
-                <Send className="w-5 h-5" />
+                <Send className="w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Floating Components */}
-      <ConversationMemory
-        onContextSelect={(context) => {
-          setInputValue(`Based on our previous conversation about ${context.topic}: `);
-          inputRef.current?.focus();
-        }}
-      />
+      {/* Floating Components - Hidden on small mobile screens */}
+      <div className="hidden md:block">
+        <ConversationMemory
+          onContextSelect={(context) => {
+            setInputValue(`Based on our previous conversation about ${context.topic}: `);
+            inputRef.current?.focus();
+          }}
+        />
 
-      <EnhancedFileManager
-        onFileSelect={(file) => {
-          setInputValue(`Tell me more about the file "${file.name}". `);
-          inputRef.current?.focus();
-        }}
-      />
+        <EnhancedFileManager
+          onFileSelect={(file) => {
+            setInputValue(`Tell me more about the file "${file.name}". `);
+            inputRef.current?.focus();
+          }}
+        />
+      </div>
 
-      {/* File Upload Dialog */}
+      {/* File Upload Dialog - Mobile Optimized */}
       <FileUploadDialog
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
