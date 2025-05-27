@@ -1,6 +1,6 @@
 
 // moeMedicalGroq.ts
-const GROQ_API_KEY = process.env.GROQ_API_KEY || "YOUR_GROQ_API_KEY";
+const GROQ_API_KEY = "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";
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 /* ------------------------------------------------------------------ */
