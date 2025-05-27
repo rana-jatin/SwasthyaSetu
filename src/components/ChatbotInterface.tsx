@@ -47,7 +47,7 @@ interface TypingState {
 const ChatbotInterface = () => {
   const [messages, setMessages] = useState<Message[]>([{
     id: '1',
-    text: 'Hello! I\'m your advanced AI health companion powered by ARC Reactor. I can analyze images, extract content from PDFs, provide medical insights, and remember our conversation context. I now feature multiple medical experts and smart suggestions. How can I help you today?',
+    text: 'Hello! I\'m your advanced AI health companion based on Ayurveduc Principles. I can analyze scans, extract content from PDF reports, provide medical insights, and remember our conversation context. I now feature multiple medical experts and smart suggestions. How can I help you today?',
     isUser: false,
     timestamp: new Date()
   }]);
