@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Image, FileText, Settings, Stethoscope } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -146,6 +147,7 @@ const ChatbotInterface = () => {
         name: file.name,
         type: 'image',
         url: fileUrl,
+        uploadDate: new Date(),
         analysis,
         metadata: {
           size: file.size,
