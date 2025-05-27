@@ -6,8 +6,12 @@
 
 :root {
   --electric-blue: #00d4ff;
+  --saffron: #F4A460;
+  --gold: #FFD700;
   --glass-white: rgba(255, 255, 255, 0.1);
   --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-saffron: rgba(244, 164, 96, 0.1);
+  --glass-gold: rgba(255, 215, 0, 0.1);
 }
 
 body {
@@ -23,8 +27,18 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.bg-glass-saffron {
+  background: rgba(244, 164, 96, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(244, 164, 96, 0.2);
+}
+
 .border-glass-border {
   border-color: rgba(255, 255, 255, 0.2);
+}
+
+.border-glass-saffron {
+  border-color: rgba(244, 164, 96, 0.2);
 }
 
 /* Advanced Animation Keyframes */
@@ -55,6 +69,21 @@ body {
   75% {
     transform: translateY(-30px) rotate(270deg);
     opacity: 0.7;
+  }
+}
+
+@keyframes particle-float-gold {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+    opacity: 0.2;
+  }
+  33% {
+    transform: translateY(-15px) rotate(120deg);
+    opacity: 0.5;
+  }
+  66% {
+    transform: translateY(-25px) rotate(240deg);
+    opacity: 0.3;
   }
 }
 
@@ -126,6 +155,15 @@ body {
   }
 }
 
+@keyframes pulse-gold {
+  0%, 100% {
+    box-shadow: 0 0 10px var(--gold);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--gold), 0 0 30px var(--gold);
+  }
+}
+
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -153,6 +191,10 @@ body {
   animation: particle-float 8s infinite ease-in-out;
 }
 
+.animate-particle-float-gold {
+  animation: particle-float-gold 10s infinite ease-in-out;
+}
+
 .animate-wave-ripple {
   animation: wave-ripple 0.6s ease-out forwards;
 }
@@ -175,6 +217,10 @@ body {
 
 .animate-pulse-glow {
   animation: pulse-glow 2s infinite;
+}
+
+.animate-pulse-gold {
+  animation: pulse-gold 2s infinite;
 }
 
 .animate-shimmer {
@@ -205,6 +251,14 @@ body {
   box-shadow: 0 0 20px var(--electric-blue);
 }
 
+.hover-glow-gold {
+  transition: box-shadow 0.3s ease;
+}
+
+.hover-glow-gold:hover {
+  box-shadow: 0 0 20px var(--gold);
+}
+
 /* Smooth Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -233,6 +287,14 @@ body {
   animation: gradient-shift 3s ease infinite;
 }
 
+.gradient-text-warm {
+  background: linear-gradient(135deg, var(--saffron), var(--gold), #ff8c42);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-shift 3s ease infinite;
+}
+
 @keyframes gradient-shift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -254,7 +316,7 @@ body {
   overflow: hidden;
 }
 
-/* Custom electric blue color */
+/* Custom color utilities */
 .text-electric-blue {
   color: var(--electric-blue);
 }
@@ -265,6 +327,30 @@ body {
 
 .border-electric-blue {
   border-color: var(--electric-blue);
+}
+
+.text-saffron {
+  color: var(--saffron);
+}
+
+.bg-saffron {
+  background-color: var(--saffron);
+}
+
+.border-saffron {
+  border-color: var(--saffron);
+}
+
+.text-gold {
+  color: var(--gold);
+}
+
+.bg-gold {
+  background-color: var(--gold);
+}
+
+.border-gold {
+  border-color: var(--gold);
 }
 
 /* Loading skeleton */
@@ -280,6 +366,11 @@ body {
   box-shadow: 0 0 0 2px var(--electric-blue);
 }
 
+.focus-glow-gold:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--gold);
+}
+
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   .bg-glass-white {
@@ -292,12 +383,14 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-message-bubble,
   .animate-particle-float,
+  .animate-particle-float-gold,
   .animate-wave-ripple,
   .animate-typing-dots,
   .animate-fade-in,
   .animate-scale-in,
   .animate-slide-up,
   .animate-pulse-glow,
+  .animate-pulse-gold,
   .animate-shimmer,
   .animate-bounce-subtle {
     animation: none;

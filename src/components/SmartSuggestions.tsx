@@ -83,20 +83,32 @@ export const SmartSuggestions = ({ lastMessage, onSuggestionClick, context }: Sm
   };
 
   const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'followup': return 'bg-blue-600/20 text-blue-300 border-blue-500/30';
-      case 'analysis': return 'bg-purple-600/20 text-purple-300 border-purple-500/30';
-      default: return 'bg-yellow-600/20 text-yellow-300 border-yellow-500/30';
+    const isMedicalContext = context === 'Medical Expert';
+    
+    if (isMedicalContext) {
+      switch (category) {
+        case 'followup': return 'bg-saffron-600/20 text-saffron-300 border-saffron-500/30';
+        case 'analysis': return 'bg-gold-600/20 text-gold-300 border-gold-500/30';
+        default: return 'bg-saffron-600/20 text-saffron-300 border-saffron-500/30';
+      }
+    } else {
+      switch (category) {
+        case 'followup': return 'bg-blue-600/20 text-blue-300 border-blue-500/30';
+        case 'analysis': return 'bg-purple-600/20 text-purple-300 border-purple-500/30';
+        default: return 'bg-yellow-600/20 text-yellow-300 border-yellow-500/30';
+      }
     }
   };
 
   if (!isVisible || suggestions.length === 0) return null;
 
+  const isMedicalContext = context === 'Medical Expert';
+
   return (
     <div className="mb-4 animate-fade-in">
       <div className="flex items-center gap-2 mb-3">
-        <Lightbulb className="w-4 h-4 text-yellow-400" />
-        <span className="text-sm text-gray-300">Smart Suggestions</span>
+        <Lightbulb className={`w-4 h-4 ${isMedicalContext ? 'text-saffron-400' : 'text-yellow-400'}`} />
+        <span className={`text-sm ${isMedicalContext ? 'text-saffron-300' : 'text-gray-300'}`}>Smart Suggestions</span>
         <Button
           onClick={() => setIsVisible(false)}
           variant="ghost"
@@ -113,7 +125,9 @@ export const SmartSuggestions = ({ lastMessage, onSuggestionClick, context }: Sm
             key={suggestion.id}
             onClick={() => onSuggestionClick(suggestion.text)}
             variant="ghost"
-            className={`w-full text-left justify-start p-3 h-auto border ${getCategoryColor(suggestion.category)} hover:bg-white/10 transition-all duration-200 hover:scale-[1.02]`}
+            className={`w-full text-left justify-start p-3 h-auto border ${getCategoryColor(suggestion.category)} hover:bg-white/10 transition-all duration-200 hover:scale-[1.02] ${
+              isMedicalContext ? 'hover-glow-gold' : ''
+            }`}
           >
             <div className="flex items-start gap-2">
               {getCategoryIcon(suggestion.category)}

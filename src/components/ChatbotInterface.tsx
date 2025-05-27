@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Image, FileText, Settings, Stethoscope } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,6 +38,7 @@ interface ParticleProps {
   x: number;
   y: number;
   delay: number;
+  type?: 'blue' | 'gold';
 }
 
 interface TypingState {
@@ -68,7 +68,7 @@ const ChatbotInterface = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Generate fewer particles on mobile for better performance
+  // Generate mixed blue and gold particles
   useEffect(() => {
     const generateParticles = () => {
       const isMobile = window.innerWidth < 768;
@@ -79,7 +79,8 @@ const ChatbotInterface = () => {
           id: i,
           x: Math.random() * 100,
           y: Math.random() * 100,
-          delay: Math.random() * 6
+          delay: Math.random() * 6,
+          type: i % 4 === 0 ? 'gold' : 'blue' // 25% gold particles, 75% blue
         });
       }
       setParticles(newParticles);
@@ -409,12 +410,17 @@ const ChatbotInterface = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-green-900 via-emerald-800 to-blue-900">
-      {/* Animated Background Particles - Reduced opacity on mobile */}
+      {/* Mixed Blue and Gold Background Particles */}
       <div className="absolute inset-0 overflow-hidden">
         {particles.map((particle) => (
           <div
             key={particle.id}
-            className="absolute w-1.5 h-1.5 md:w-2 md:h-2 bg-electric-blue rounded-full opacity-20 md:opacity-30 animate-particle-float"
+            className={cn(
+              "absolute w-1.5 h-1.5 md:w-2 md:h-2 rounded-full opacity-20 md:opacity-30",
+              particle.type === 'gold' 
+                ? "bg-gold-400 animate-particle-float-gold" 
+                : "bg-electric-blue animate-particle-float"
+            )}
             style={{
               left: `${particle.x}%`,
               top: `${particle.y}%`,
@@ -453,7 +459,12 @@ const ChatbotInterface = () => {
                 <Button
                   onClick={() => setUseMedicalExperts(!useMedicalExperts)}
                   variant={useMedicalExperts ? "default" : "secondary"}
-                  className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 min-h-[44px]"
+                  className={cn(
+                    "flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 min-h-[44px] transition-all duration-300",
+                    useMedicalExperts 
+                      ? "bg-gradient-to-r from-saffron-400 to-gold-500 hover:from-saffron-500 hover:to-gold-600 text-black font-medium shadow-lg hover:shadow-gold-400/50 animate-pulse-gold" 
+                      : "bg-gray-600 hover:bg-gray-500"
+                  )}
                 >
                   <Stethoscope className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span className="hidden sm:inline">{useMedicalExperts ? 'Medical Mode On' : 'Medical Mode Off'}</span>
@@ -464,7 +475,7 @@ const ChatbotInterface = () => {
                   useMedicalExperts={useMedicalExperts}
                   onToggleMedicalExperts={setUseMedicalExperts}
                 >
-                  <Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px]">
+                  <Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px] hover-glow-gold">
                     <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
                   </Button>
                 </SettingsPanel>
@@ -513,7 +524,7 @@ const ChatbotInterface = () => {
           <div className={cn(
             "backdrop-blur-md bg-glass-white border rounded-2xl sm:rounded-3xl shadow-2xl transition-all duration-300",
             isFocused 
-              ? "border-electric-blue" 
+              ? "border-saffron-400 shadow-saffron-400/30" 
               : "border-glass-border"
           )}>
             <div className="flex items-end p-3 sm:p-4 space-x-2 sm:space-x-4">
@@ -527,26 +538,26 @@ const ChatbotInterface = () => {
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
                   placeholder="Ask me about your uploaded files or any health-related question..."
-                  className="w-full bg-transparent text-white placeholder-gray-400 focus:outline-none text-sm sm:text-lg"
+                  className="w-full bg-transparent text-white placeholder-gray-400 focus:outline-none text-sm sm:text-lg focus-glow-gold"
                 />
               </div>
               
-              {/* Upload Buttons - Touch Optimized */}
+              {/* Upload Buttons - Touch Optimized with Saffron Theme */}
               <div className="flex space-x-1 sm:space-x-2">
                 <Button
                   onClick={openImageUpload}
-                  className="rounded-xl sm:rounded-2xl p-2 sm:p-3 min-h-[44px] min-w-[44px] transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg"
+                  className="rounded-xl sm:rounded-2xl p-2 sm:p-3 min-h-[44px] min-w-[44px] transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gradient-to-r from-saffron-500 to-saffron-600 hover:from-saffron-400 hover:to-saffron-500 shadow-lg hover:shadow-saffron-400/50 hover-glow-gold"
                   disabled={typingState.isTyping}
                 >
-                  <Image className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Image className="w-4 h-4 sm:w-5 sm:h-5 text-black" />
                 </Button>
 
                 <Button
                   onClick={openPdfUpload}
-                  className="rounded-xl sm:rounded-2xl p-2 sm:p-3 min-h-[44px] min-w-[44px] transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg"
+                  className="rounded-xl sm:rounded-2xl p-2 sm:p-3 min-h-[44px] min-w-[44px] transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-400 hover:to-gold-500 shadow-lg hover:shadow-gold-400/50 hover-glow-gold"
                   disabled={typingState.isTyping}
                 >
-                  <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-black" />
                 </Button>
               </div>
 

@@ -66,7 +66,31 @@ export default {
 				'electric-blue': '#00D4FF',
 				'neon-pink': '#FF006E',
 				'glass-white': 'rgba(255, 255, 255, 0.1)',
-				'glass-border': 'rgba(255, 255, 255, 0.2)'
+				'glass-border': 'rgba(255, 255, 255, 0.2)',
+				'saffron': {
+					'50': '#FEF9F2',
+					'100': '#FDF2E5',
+					'200': '#FAE5CC',
+					'300': '#F6D199',
+					'400': '#F4A460',
+					'500': '#E89142',
+					'600': '#D97B2A',
+					'700': '#B86420',
+					'800': '#944F1A',
+					'900': '#7A4218'
+				},
+				'gold': {
+					'50': '#FFFEF7',
+					'100': '#FFFCEB',
+					'200': '#FFF7D1',
+					'300': '#FFED9F',
+					'400': '#FFD700',
+					'500': '#F5C842',
+					'600': '#E5B429',
+					'700': '#C69C1F',
+					'800': '#A68119',
+					'900': '#8B6A16'
+				}
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -130,6 +154,14 @@ export default {
 						boxShadow: '0 0 20px rgba(0, 212, 255, 0.6), 0 0 30px rgba(0, 212, 255, 0.4)'
 					}
 				},
+				'pulse-gold': {
+					'0%, 100%': {
+						boxShadow: '0 0 5px rgba(255, 215, 0, 0.3)'
+					},
+					'50%': {
+						boxShadow: '0 0 20px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.4)'
+					}
+				},
 				'typing-dots': {
 					'0%, 60%, 100%': {
 						transform: 'scale(1)',
@@ -148,6 +180,7 @@ export default {
 				'wave-ripple': 'wave-ripple 0.6s ease-out',
 				'message-bubble': 'message-bubble 0.4s ease-out',
 				'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
+				'pulse-gold': 'pulse-gold 2s ease-in-out infinite',
 				'typing-dots': 'typing-dots 1.4s ease-in-out infinite'
 			},
 			backdropBlur: {

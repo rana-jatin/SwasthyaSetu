@@ -19,30 +19,32 @@ export const AdvancedTypingIndicator = ({ stage, expertType }: AdvancedTypingInd
   }, []);
 
   const getStageInfo = () => {
+    const isMedicalExpert = expertType === 'Medical Expert';
+    
     switch (stage) {
       case 'thinking':
         return {
-          icon: <Brain className="w-4 h-4 text-blue-400" />,
+          icon: <Brain className={`w-4 h-4 ${isMedicalExpert ? 'text-saffron-400' : 'text-blue-400'}`} />,
           text: 'Analyzing your message',
-          color: 'text-blue-300'
+          color: isMedicalExpert ? 'text-saffron-300' : 'text-blue-300'
         };
       case 'processing':
         return {
-          icon: <Zap className="w-4 h-4 text-yellow-400" />,
-          text: expertType ? `Consulting ${expertType} expert` : 'Processing request',
-          color: 'text-yellow-300'
+          icon: <Zap className={`w-4 h-4 ${isMedicalExpert ? 'text-gold-400' : 'text-yellow-400'}`} />,
+          text: expertType ? `Consulting ${expertType}` : 'Processing request',
+          color: isMedicalExpert ? 'text-gold-300' : 'text-yellow-300'
         };
       case 'searching':
         return {
-          icon: <Search className="w-4 h-4 text-green-400" />,
+          icon: <Search className={`w-4 h-4 ${isMedicalExpert ? 'text-saffron-400' : 'text-green-400'}`} />,
           text: 'Searching knowledge base',
-          color: 'text-green-300'
+          color: isMedicalExpert ? 'text-saffron-300' : 'text-green-300'
         };
       case 'generating':
         return {
-          icon: <div className="w-4 h-4 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-pulse" />,
+          icon: <div className={`w-4 h-4 rounded-full animate-pulse ${isMedicalExpert ? 'bg-gradient-to-r from-saffron-400 to-gold-400' : 'bg-gradient-to-r from-purple-400 to-pink-400'}`} />,
           text: 'Generating response',
-          color: 'text-purple-300'
+          color: isMedicalExpert ? 'text-saffron-300' : 'text-purple-300'
         };
       default:
         return {
@@ -54,10 +56,15 @@ export const AdvancedTypingIndicator = ({ stage, expertType }: AdvancedTypingInd
   };
 
   const stageInfo = getStageInfo();
+  const isMedicalExpert = expertType === 'Medical Expert';
 
   return (
     <div className="flex justify-start animate-message-bubble">
-      <div className="max-w-xs px-4 py-3 rounded-2xl backdrop-blur-sm bg-glass-white border border-glass-border text-gray-100 mr-4 shadow-lg">
+      <div className={`max-w-xs px-4 py-3 rounded-2xl backdrop-blur-sm border text-gray-100 mr-4 shadow-lg ${
+        isMedicalExpert 
+          ? 'bg-glass-saffron border-glass-saffron animate-pulse-gold' 
+          : 'bg-glass-white border-glass-border'
+      }`}>
         <div className="flex items-center space-x-3">
           <div className="animate-pulse">
             {stageInfo.icon}
@@ -69,9 +76,15 @@ export const AdvancedTypingIndicator = ({ stage, expertType }: AdvancedTypingInd
             </span>
             
             <div className="flex space-x-1 mt-1">
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-typing-dots"></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-typing-dots" style={{ animationDelay: '0.2s' }}></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-typing-dots" style={{ animationDelay: '0.4s' }}></div>
+              <div className={`w-2 h-2 rounded-full animate-typing-dots ${
+                isMedicalExpert ? 'bg-saffron-400' : 'bg-gray-400'
+              }`}></div>
+              <div className={`w-2 h-2 rounded-full animate-typing-dots ${
+                isMedicalExpert ? 'bg-gold-400' : 'bg-gray-400'
+              }`} style={{ animationDelay: '0.2s' }}></div>
+              <div className={`w-2 h-2 rounded-full animate-typing-dots ${
+                isMedicalExpert ? 'bg-saffron-400' : 'bg-gray-400'
+              }`} style={{ animationDelay: '0.4s' }}></div>
             </div>
           </div>
         </div>
