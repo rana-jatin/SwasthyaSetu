@@ -1,18 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Image, FileText } from 'lucide-react';
+import { Send, Image, FileText, Settings, Stethoscope } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { generateGroqResponse, generateVisionResponse, generateReasoningResponse, GroqMessage } from '@/services/groqService';
+import { generateMoEMedicalResponse } from '@/services/moeMedicalGroq';
 import { extractPDFContent, searchInText } from '@/services/pdfService';
 import { fileStorageService, StoredFile } from '@/services/fileStorageService';
 import { convertImageToBase64, resizeImage } from '@/utils/imageUtils';
 import { toast } from 'sonner';
+
+// Import new components
+import { ConversationMemory } from './ConversationMemory';
+import { SmartSuggestions } from './SmartSuggestions';
+import { MessageBubble } from './MessageBubble';
+import { AdvancedTypingIndicator } from './AdvancedTypingIndicator';
+import { EnhancedFileManager } from './EnhancedFileManager';
 
 interface Message {
   id: string;
   text: string;
   isUser: boolean;
   timestamp: Date;
+  expertType?: string;
   file?: {
     id: string;
     name: string;
@@ -29,21 +38,28 @@ interface ParticleProps {
   delay: number;
 }
 
+interface TypingState {
+  isTyping: boolean;
+  stage: 'thinking' | 'processing' | 'searching' | 'generating';
+  expertType?: string;
+}
+
 const ChatbotInterface = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hello! I\'m your AI assistant powered by ARC Reactor. I can analyze images, extract content from PDFs, and answer questions about your uploaded files. How can I help you today?',
+      text: 'Hello! I\'m your advanced AI health companion powered by ARC Reactor. I can analyze images, extract content from PDFs, provide medical insights, and remember our conversation context. I now feature multiple medical experts and smart suggestions. How can I help you today?',
       isUser: false,
       timestamp: new Date()
     }
   ]);
   const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [typingState, setTypingState] = useState<TypingState>({ isTyping: false, stage: 'thinking' });
   const [isFocused, setIsFocused] = useState(false);
   const [particles, setParticles] = useState<ParticleProps[]>([]);
   const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
   const [storedFiles, setStoredFiles] = useState<StoredFile[]>([]);
+  const [useMedicalExperts, setUseMedicalExperts] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -111,11 +127,9 @@ const ChatbotInterface = () => {
     console.log('Processing image file:', file.name, file.size);
 
     try {
-      setIsTyping(true);
+      setTypingState({ isTyping: true, stage: 'processing' });
       toast.loading('Processing image...', { duration: Infinity });
       
-      // Resize and convert image
-      console.log('Resizing image...');
       const resizedBlob = await resizeImage(file);
       const resizedFile = new File([resizedBlob], file.name, { type: 'image/jpeg' });
       
@@ -125,11 +139,10 @@ const ChatbotInterface = () => {
       
       const fileId = Date.now().toString();
       
-      // Generate initial analysis
+      setTypingState({ isTyping: true, stage: 'generating' });
       console.log('Generating image analysis with Groq Vision API...');
       const analysis = await generateVisionResponse(base64, "Analyze this image in detail. Describe what you see, including objects, people, text, colors, and any other relevant details.");
       
-      // Store file
       console.log('Storing file...');
       const storedFile: StoredFile = {
         id: fileId,
@@ -147,7 +160,6 @@ const ChatbotInterface = () => {
       await fileStorageService.storeFile(storedFile);
       setStoredFiles(prev => [...prev, storedFile]);
       
-      // Add user message
       const userMessage: Message = {
         id: Date.now().toString(),
         text: `Uploaded image: ${file.name}`,
@@ -164,7 +176,6 @@ const ChatbotInterface = () => {
       
       setMessages(prev => [...prev, userMessage]);
       
-      // Add AI response
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         text: analysis,
@@ -173,7 +184,7 @@ const ChatbotInterface = () => {
       };
       
       setMessages(prev => [...prev, aiResponse]);
-      setIsTyping(false);
+      setTypingState({ isTyping: false, stage: 'thinking' });
       createRipple(30, 70);
       
       toast.dismiss();
@@ -183,7 +194,7 @@ const ChatbotInterface = () => {
       console.error('Error processing image:', error);
       toast.dismiss();
       toast.error(`Failed to analyze image: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      setIsTyping(false);
+      setTypingState({ isTyping: false, stage: 'thinking' });
     }
     
     e.target.value = '';
@@ -202,16 +213,15 @@ const ChatbotInterface = () => {
     console.log('Processing PDF file:', file.name, file.size);
 
     try {
-      setIsTyping(true);
+      setTypingState({ isTyping: true, stage: 'processing' });
       toast.loading('Processing PDF...', { duration: Infinity });
       
-      // Extract PDF content
       console.log('Extracting PDF content...');
       const pdfContent = await extractPDFContent(file);
       const fileUrl = URL.createObjectURL(file);
       const fileId = Date.now().toString();
       
-      // Generate analysis using reasoning model
+      setTypingState({ isTyping: true, stage: 'generating' });
       console.log('Generating PDF analysis...');
       const analysis = await generateReasoningResponse([
         {
@@ -220,7 +230,6 @@ const ChatbotInterface = () => {
         }
       ]);
       
-      // Store file
       console.log('Storing PDF file...');
       const storedFile: StoredFile = {
         id: fileId,
@@ -240,7 +249,6 @@ const ChatbotInterface = () => {
       await fileStorageService.storeFile(storedFile);
       setStoredFiles(prev => [...prev, storedFile]);
       
-      // Add user message
       const userMessage: Message = {
         id: Date.now().toString(),
         text: `Uploaded PDF: ${file.name} (${pdfContent.numPages} pages)`,
@@ -257,7 +265,6 @@ const ChatbotInterface = () => {
       
       setMessages(prev => [...prev, userMessage]);
       
-      // Add AI response
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         text: `PDF uploaded successfully! I've extracted ${pdfContent.text.length} characters from ${pdfContent.numPages} pages. Here's a summary:\n\n${analysis}`,
@@ -266,7 +273,7 @@ const ChatbotInterface = () => {
       };
       
       setMessages(prev => [...prev, aiResponse]);
-      setIsTyping(false);
+      setTypingState({ isTyping: false, stage: 'thinking' });
       createRipple(30, 70);
       
       toast.dismiss();
@@ -276,57 +283,63 @@ const ChatbotInterface = () => {
       console.error('Error processing PDF:', error);
       toast.dismiss();
       toast.error(`Failed to process PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      setIsTyping(false);
+      setTypingState({ isTyping: false, stage: 'thinking' });
     }
     
     e.target.value = '';
   };
 
-  const handleSend = async () => {
-    if (!inputValue.trim()) return;
+  const handleSend = async (messageText?: string) => {
+    const textToSend = messageText || inputValue;
+    if (!textToSend.trim()) return;
 
     const newMessage: Message = {
       id: Date.now().toString(),
-      text: inputValue,
+      text: textToSend,
       isUser: true,
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, newMessage]);
-    const currentInput = inputValue;
-    setInputValue('');
-    setIsTyping(true);
+    if (!messageText) setInputValue('');
+    setTypingState({ isTyping: true, stage: 'thinking' });
     createRipple(50, 50);
 
     try {
-      // Check if user is asking about uploaded files
       const relevantFiles = storedFiles.filter(file => 
-        currentInput.toLowerCase().includes(file.name.toLowerCase()) ||
-        currentInput.toLowerCase().includes('image') && file.type === 'image' ||
-        currentInput.toLowerCase().includes('pdf') && file.type === 'pdf' ||
-        currentInput.toLowerCase().includes('document') && file.type === 'pdf'
+        textToSend.toLowerCase().includes(file.name.toLowerCase()) ||
+        textToSend.toLowerCase().includes('image') && file.type === 'image' ||
+        textToSend.toLowerCase().includes('pdf') && file.type === 'pdf' ||
+        textToSend.toLowerCase().includes('document') && file.type === 'pdf'
       );
 
       let aiResponseText: string;
+      let expertType: string | undefined;
 
       if (relevantFiles.length > 0) {
-        // Use reasoning model with file context
+        setTypingState({ isTyping: true, stage: 'searching' });
         const fileContext = relevantFiles.map(file => 
           `File: ${file.name} (${file.type})\nAnalysis: ${file.analysis}\n${file.extractedText ? `Content: ${file.extractedText.substring(0, 1000)}...` : ''}`
         ).join('\n\n');
 
+        setTypingState({ isTyping: true, stage: 'generating' });
         aiResponseText = await generateReasoningResponse([
           {
             role: 'user',
-            content: currentInput
+            content: textToSend
           }
         ], fileContext);
+      } else if (useMedicalExperts) {
+        setTypingState({ isTyping: true, stage: 'processing' });
+        // Route to medical expert
+        aiResponseText = await generateMoEMedicalResponse(textToSend);
+        expertType = 'Medical Expert';
       } else {
-        // Regular conversation
+        setTypingState({ isTyping: true, stage: 'generating' });
         const groqMessages: GroqMessage[] = [
           {
             role: 'system',
-            content: 'You are a helpful, friendly AI assistant named Ashvin. Provide clear and concise responses.Also Keep your Ayurveda Knowledge.'
+            content: 'You are a helpful, friendly AI assistant named Ashvin. Provide clear and concise responses. Also keep your Ayurveda knowledge.'
           },
           ...messages.slice(-10).map(msg => ({
             role: msg.isUser ? 'user' as const : 'assistant' as const,
@@ -334,7 +347,7 @@ const ChatbotInterface = () => {
           })),
           {
             role: 'user',
-            content: currentInput
+            content: textToSend
           }
         ];
 
@@ -345,11 +358,12 @@ const ChatbotInterface = () => {
         id: (Date.now() + 1).toString(),
         text: aiResponseText,
         isUser: false,
-        timestamp: new Date()
+        timestamp: new Date(),
+        expertType
       };
       
       setMessages(prev => [...prev, aiResponse]);
-      setIsTyping(false);
+      setTypingState({ isTyping: false, stage: 'thinking' });
       createRipple(30, 70);
     } catch (error) {
       console.error('Error generating AI response:', error);
@@ -360,9 +374,25 @@ const ChatbotInterface = () => {
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorResponse]);
-      setIsTyping(false);
+      setTypingState({ isTyping: false, stage: 'thinking' });
       toast.error('Failed to generate response');
     }
+  };
+
+  const handleRegenerateMessage = async () => {
+    const lastUserMessage = [...messages].reverse().find(msg => msg.isUser);
+    if (lastUserMessage) {
+      // Remove the last AI response
+      setMessages(prev => prev.slice(0, -1));
+      // Regenerate response
+      await handleSend(lastUserMessage.text);
+    }
+  };
+
+  const handleMessageFeedback = (messageId: string, type: 'positive' | 'negative') => {
+    console.log(`Feedback for message ${messageId}: ${type}`);
+    // Store feedback for improving responses
+    localStorage.setItem(`feedback_${messageId}`, type);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -371,6 +401,8 @@ const ChatbotInterface = () => {
       handleSend();
     }
   };
+
+  const lastAiMessage = [...messages].reverse().find(msg => !msg.isUser);
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-green-900 via-emerald-800 to-blue-900">
@@ -404,11 +436,30 @@ const ChatbotInterface = () => {
 
       {/* Main Chat Container */}
       <div className="relative z-10 flex flex-col h-screen max-w-4xl mx-auto p-4">
-        {/* Header */}
+        {/* Header with Settings */}
         <div className="mb-6">
           <div className="backdrop-blur-md bg-glass-white border border-glass-border rounded-3xl p-6 shadow-2xl">
-            <h1 className="text-3xl font-bold text-white mb-2">Your Health Companion</h1>
-            <p className="text-gray-300">Your intelligent companion for Health conversations, scan analysis, and lab reports processing</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-white mb-2">Your Advanced Health Companion</h1>
+                <p className="text-gray-300">Intelligent companion with medical experts, conversation memory, and smart suggestions</p>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={() => setUseMedicalExperts(!useMedicalExperts)}
+                  variant={useMedicalExperts ? "default" : "secondary"}
+                  className="flex items-center gap-2"
+                >
+                  <Stethoscope className="w-4 h-4" />
+                  {useMedicalExperts ? 'Medical AI On' : 'Medical AI Off'}
+                </Button>
+                
+                <Button variant="ghost" size="icon">
+                  <Settings className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -416,60 +467,30 @@ const ChatbotInterface = () => {
         <div className="flex-1 overflow-hidden">
           <div className="backdrop-blur-md bg-glass-white border border-glass-border rounded-3xl h-full shadow-2xl">
             <div className="h-full overflow-y-auto p-6 space-y-4">
+              {/* Smart Suggestions */}
+              {lastAiMessage && (
+                <SmartSuggestions
+                  lastMessage={lastAiMessage.text}
+                  onSuggestionClick={handleSend}
+                  context={lastAiMessage.expertType}
+                />
+              )}
+
               {messages.map((message) => (
-                <div
+                <MessageBubble
                   key={message.id}
-                  className={cn(
-                    "flex animate-message-bubble",
-                    message.isUser ? "justify-end" : "justify-start"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "max-w-xs lg:max-w-md px-4 py-3 rounded-2xl backdrop-blur-sm shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl",
-                      message.isUser
-                        ? "bg-gradient-to-r from-electric-blue to-blue-500 text-white ml-4"
-                        : "bg-glass-white border border-glass-border text-gray-100 mr-4"
-                    )}
-                  >
-                    {message.file && (
-                      <div className="mb-2">
-                        {message.file.type === 'image' ? (
-                          <img 
-                            src={message.file.url} 
-                            alt={message.file.name}
-                            className="max-w-full h-32 object-cover rounded-lg"
-                          />
-                        ) : (
-                          <div className="flex items-center space-x-2 p-2 bg-black/20 rounded-lg">
-                            <FileText className="w-4 h-4" />
-                            <span className="text-xs truncate">{message.file.name}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
-                    <p className={cn(
-                      "text-xs mt-2 opacity-70",
-                      message.isUser ? "text-blue-100" : "text-gray-400"
-                    )}>
-                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                </div>
+                  message={message}
+                  onRegenerate={message.isUser ? undefined : handleRegenerateMessage}
+                  onFeedback={message.isUser ? undefined : handleMessageFeedback}
+                />
               ))}
 
-              {/* Typing Indicator */}
-              {isTyping && (
-                <div className="flex justify-start animate-message-bubble">
-                  <div className="max-w-xs px-4 py-3 rounded-2xl backdrop-blur-sm bg-glass-white border border-glass-border text-gray-100 mr-4 shadow-lg">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-typing-dots"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-typing-dots" style={{ animationDelay: '0.2s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-typing-dots" style={{ animationDelay: '0.4s' }}></div>
-                    </div>
-                  </div>
-                </div>
+              {/* Advanced Typing Indicator */}
+              {typingState.isTyping && (
+                <AdvancedTypingIndicator
+                  stage={typingState.stage}
+                  expertType={typingState.expertType}
+                />
               )}
 
               <div ref={messagesEndRef} />
@@ -495,14 +516,13 @@ const ChatbotInterface = () => {
                   onKeyPress={handleKeyPress}
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
-                  placeholder="Ask me about your uploaded files or anything else..."
+                  placeholder="Ask me about your uploaded files or any health-related question..."
                   className="w-full bg-transparent text-white placeholder-gray-400 focus:outline-none text-lg"
                 />
               </div>
               
               {/* Upload Buttons */}
               <div className="flex space-x-2">
-                {/* Image Upload */}
                 <div className="relative">
                   <input
                     type="file"
@@ -515,13 +535,12 @@ const ChatbotInterface = () => {
                   <Button
                     type="button"
                     className="rounded-2xl p-3 transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg relative z-0"
-                    disabled={isTyping}
+                    disabled={typingState.isTyping}
                   >
                     <Image className="w-5 h-5" />
                   </Button>
                 </div>
 
-                {/* PDF Upload */}
                 <div className="relative">
                   <input
                     type="file"
@@ -534,7 +553,7 @@ const ChatbotInterface = () => {
                   <Button
                     type="button"
                     className="rounded-2xl p-3 transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg relative z-0"
-                    disabled={isTyping}
+                    disabled={typingState.isTyping}
                   >
                     <FileText className="w-5 h-5" />
                   </Button>
@@ -542,11 +561,11 @@ const ChatbotInterface = () => {
               </div>
 
               <Button
-                onClick={handleSend}
-                disabled={!inputValue.trim() || isTyping}
+                onClick={() => handleSend()}
+                disabled={!inputValue.trim() || typingState.isTyping}
                 className={cn(
                   "rounded-2xl p-3 transition-all duration-300 transform hover:scale-110 active:scale-95",
-                  inputValue.trim() && !isTyping
+                  inputValue.trim() && !typingState.isTyping
                     ? "bg-gradient-to-r from-electric-blue to-blue-500 hover:from-blue-500 hover:to-electric-blue shadow-lg hover:shadow-electric-blue/50"
                     : "bg-gray-600 cursor-not-allowed"
                 )}
@@ -557,6 +576,21 @@ const ChatbotInterface = () => {
           </div>
         </div>
       </div>
+
+      {/* Floating Components */}
+      <ConversationMemory
+        onContextSelect={(context) => {
+          setInputValue(`Based on our previous conversation about ${context.topic}: `);
+          inputRef.current?.focus();
+        }}
+      />
+
+      <EnhancedFileManager
+        onFileSelect={(file) => {
+          setInputValue(`Tell me more about the file "${file.name}". `);
+          inputRef.current?.focus();
+        }}
+      />
     </div>
   );
 };
