@@ -16,6 +16,7 @@ import { MessageBubble } from './MessageBubble';
 import { AdvancedTypingIndicator } from './AdvancedTypingIndicator';
 import { EnhancedFileManager } from './EnhancedFileManager';
 import SettingsPanel from './SettingsPanel';
+import FileUploadDialog from './FileUploadDialog';
 
 interface Message {
   id: string;
@@ -61,6 +62,8 @@ const ChatbotInterface = () => {
   const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
   const [storedFiles, setStoredFiles] = useState<StoredFile[]>([]);
   const [useMedicalExperts, setUseMedicalExperts] = useState(true);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploadDialogType, setUploadDialogType] = useState<'image' | 'pdf'>('image');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -115,17 +118,8 @@ const ChatbotInterface = () => {
     loadStoredFiles();
   }, []);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('Image upload triggered');
-    
-    const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith('image/')) {
-      console.error('Invalid file type selected');
-      toast.error('Please select a valid image file');
-      return;
-    }
-
-    console.log('Processing image file:', file.name, file.size);
+  const handleImageUpload = async (file: File, userQuery: string) => {
+    console.log('Image upload triggered with query:', userQuery);
 
     try {
       setTypingState({ isTyping: true, stage: 'processing' });
@@ -141,8 +135,8 @@ const ChatbotInterface = () => {
       const fileId = Date.now().toString();
       
       setTypingState({ isTyping: true, stage: 'generating' });
-      console.log('Generating image analysis with Groq Vision API...');
-      const analysis = await generateVisionResponse(base64, "Analyze this image in detail. Describe what you see, including objects, people, text, colors, and any other relevant details.");
+      console.log('Generating image analysis with custom query...');
+      const analysis = await generateVisionResponse(base64, userQuery);
       
       console.log('Storing file...');
       const storedFile: StoredFile = {
@@ -163,7 +157,7 @@ const ChatbotInterface = () => {
       
       const userMessage: Message = {
         id: Date.now().toString(),
-        text: `Uploaded image: ${file.name}`,
+        text: `Uploaded image: ${file.name}\nQuery: ${userQuery}`,
         isUser: true,
         timestamp: new Date(),
         file: {
@@ -197,21 +191,10 @@ const ChatbotInterface = () => {
       toast.error(`Failed to analyze image: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setTypingState({ isTyping: false, stage: 'thinking' });
     }
-    
-    e.target.value = '';
   };
 
-  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('PDF upload triggered');
-    
-    const file = e.target.files?.[0];
-    if (!file || file.type !== 'application/pdf') {
-      console.error('Invalid file type selected');
-      toast.error('Please select a valid PDF file');
-      return;
-    }
-
-    console.log('Processing PDF file:', file.name, file.size);
+  const handlePdfUpload = async (file: File, userQuery: string) => {
+    console.log('PDF upload triggered with query:', userQuery);
 
     try {
       setTypingState({ isTyping: true, stage: 'processing' });
@@ -223,11 +206,11 @@ const ChatbotInterface = () => {
       const fileId = Date.now().toString();
       
       setTypingState({ isTyping: true, stage: 'generating' });
-      console.log('Generating PDF analysis...');
+      console.log('Generating PDF analysis with custom query...');
       const analysis = await generateReasoningResponse([
         {
           role: 'user',
-          content: `Analyze this PDF document and provide a summary. The document contains: ${pdfContent.text.substring(0, 500)}...`
+          content: `${userQuery}\n\nDocument content: ${pdfContent.text.substring(0, 2000)}...`
         }
       ]);
       
@@ -252,7 +235,7 @@ const ChatbotInterface = () => {
       
       const userMessage: Message = {
         id: Date.now().toString(),
-        text: `Uploaded PDF: ${file.name} (${pdfContent.numPages} pages)`,
+        text: `Uploaded PDF: ${file.name} (${pdfContent.numPages} pages)\nQuery: ${userQuery}`,
         isUser: true,
         timestamp: new Date(),
         file: {
@@ -268,7 +251,7 @@ const ChatbotInterface = () => {
       
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: `PDF uploaded successfully! I've extracted ${pdfContent.text.length} characters from ${pdfContent.numPages} pages. Here's a summary:\n\n${analysis}`,
+        text: `PDF processed successfully! Here's the analysis based on your query:\n\n${analysis}`,
         isUser: false,
         timestamp: new Date()
       };
@@ -286,8 +269,6 @@ const ChatbotInterface = () => {
       toast.error(`Failed to process PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setTypingState({ isTyping: false, stage: 'thinking' });
     }
-    
-    e.target.value = '';
   };
 
   const handleSend = async (messageText?: string) => {
@@ -400,6 +381,24 @@ const ChatbotInterface = () => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const openImageUpload = () => {
+    setUploadDialogType('image');
+    setUploadDialogOpen(true);
+  };
+
+  const openPdfUpload = () => {
+    setUploadDialogType('pdf');
+    setUploadDialogOpen(true);
+  };
+
+  const handleFileUpload = (file: File, query: string) => {
+    if (uploadDialogType === 'image') {
+      handleImageUpload(file, query);
+    } else {
+      handlePdfUpload(file, query);
     }
   };
 
@@ -529,41 +528,21 @@ const ChatbotInterface = () => {
               
               {/* Upload Buttons */}
               <div className="flex space-x-2">
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    id="image-upload"
-                    aria-label="Upload image"
-                  />
-                  <Button
-                    type="button"
-                    className="rounded-2xl p-3 transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg relative z-0"
-                    disabled={typingState.isTyping}
-                  >
-                    <Image className="w-5 h-5" />
-                  </Button>
-                </div>
+                <Button
+                  onClick={openImageUpload}
+                  className="rounded-2xl p-3 transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg"
+                  disabled={typingState.isTyping}
+                >
+                  <Image className="w-5 h-5" />
+                </Button>
 
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={handlePdfUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    id="pdf-upload"
-                    aria-label="Upload PDF"
-                  />
-                  <Button
-                    type="button"
-                    className="rounded-2xl p-3 transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg relative z-0"
-                    disabled={typingState.isTyping}
-                  >
-                    <FileText className="w-5 h-5" />
-                  </Button>
-                </div>
+                <Button
+                  onClick={openPdfUpload}
+                  className="rounded-2xl p-3 transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gray-600 hover:bg-gray-500 shadow-lg"
+                  disabled={typingState.isTyping}
+                >
+                  <FileText className="w-5 h-5" />
+                </Button>
               </div>
 
               <Button
@@ -596,6 +575,15 @@ const ChatbotInterface = () => {
           setInputValue(`Tell me more about the file "${file.name}". `);
           inputRef.current?.focus();
         }}
+      />
+
+      {/* File Upload Dialog */}
+      <FileUploadDialog
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        fileType={uploadDialogType}
+        onUpload={handleFileUpload}
+        isProcessing={typingState.isTyping}
       />
     </div>
   );
