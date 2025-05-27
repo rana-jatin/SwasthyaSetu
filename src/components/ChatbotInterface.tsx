@@ -150,6 +150,7 @@ const ChatbotInterface = () => {
         name: file.name,
         type: 'image',
         url: fileUrl,
+        uploadDate: new Date(),
         analysis,
         metadata: {
           size: file.size,
