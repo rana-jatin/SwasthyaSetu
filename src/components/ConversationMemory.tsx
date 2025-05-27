@@ -46,7 +46,7 @@ export const ConversationMemory = ({ onContextSelect }: ConversationMemoryProps)
     return (
       <Button
         onClick={() => setIsVisible(true)}
-        className="fixed bottom-20 left-4 z-50 rounded-full p-3 bg-purple-600 hover:bg-purple-700"
+        className="fixed bottom-20 left-4 z-50 rounded-full p-3 bg-blue-600 hover:bg-blue-700"
       >
         <Brain className="w-5 h-5" />
       </Button>
