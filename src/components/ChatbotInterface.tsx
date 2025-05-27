@@ -146,7 +146,6 @@ const ChatbotInterface = () => {
         name: file.name,
         type: 'image',
         url: fileUrl,
-        uploadDate: new Date(),
         analysis,
         metadata: {
           size: file.size,
@@ -455,7 +454,7 @@ const ChatbotInterface = () => {
                   className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 min-h-[44px]"
                 >
                   <Stethoscope className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">{useMedicalExperts ? 'Medical AI On' : 'Medical AI Off'}</span>
+                  <span className="hidden sm:inline">{useMedicalExperts ? 'Medical Mode On' : 'Medical Mode Off'}</span>
                   <span className="sm:hidden">{useMedicalExperts ? 'Medical On' : 'Medical Off'}</span>
                 </Button>
                 
