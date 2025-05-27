@@ -121,8 +121,7 @@ export const generateReasoningResponse = async (messages: GroqMessage[], context
       ? `You are a helpful AI assistant developed group of researchers with advanced reasoning capabilities. Use the following context to answer questions: ${context}`
       : 'You are a helpful AI assistant developed group of researchers with advanced reasoning capabilities. Provide detailed, logical responses to complex questions.';
 
-   // const response = await generateMoEMedicalResponse(context);
-    const l= await fetch(GROQ_API_URL, {
+      const response = await fetch(GROQ_API_URL, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${GROQ_API_KEY}`,
