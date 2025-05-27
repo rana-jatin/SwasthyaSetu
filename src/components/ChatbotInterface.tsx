@@ -17,6 +17,7 @@ import { AdvancedTypingIndicator } from './AdvancedTypingIndicator';
 import { EnhancedFileManager } from './EnhancedFileManager';
 import SettingsPanel from './SettingsPanel';
 import FileUploadDialog from './FileUploadDialog';
+
 interface Message {
   id: string;
   text: string;
@@ -149,7 +150,6 @@ const ChatbotInterface = () => {
         name: file.name,
         type: 'image',
         url: fileUrl,
-        uploadDate: new Date(),
         analysis,
         metadata: {
           size: file.size,
@@ -480,7 +480,7 @@ const ChatbotInterface = () => {
                 </Button>
               </div>
 
-              <Button onClick={() => handleSend()} disabled={!inputValue.trim() || typingState.isTyping} className={cn("rounded-xl sm:rounded-2xl p-2 sm:p-3 min-h-[44px] min-w-[44px] transition-all duration-300 transform hover:scale-110 active:scale-95", inputValue.trim() && !typingState.isTyping ? "bg-gradient-to-r from-electric-blue to-blue-500 hover:from-blue-500 hover:to-electric-blue shadow-lg hover:shadow-electric-blue/50" : "bg-gray-600 cursor-not-allowed")}>
+              <Button onClick={() => handleSend()} disabled={!inputValue.trim() || typingState.isTyping} className={cn("rounded-xl sm:rounded-2xl p-2 sm:p-3 min-h-[44px] min-w-[44px] transition-all duration-300 transform hover:scale-110 active:scale-95", inputValue.trim() && !typingState.isTyping ? "bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-400 hover:to-gold-500 shadow-lg hover:shadow-gold-400/50 hover-glow-gold" : "bg-gray-600 cursor-not-allowed")}>
                 <Send className="w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
             </div>
