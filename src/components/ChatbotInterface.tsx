@@ -15,6 +15,7 @@ import { SmartSuggestions } from './SmartSuggestions';
 import { MessageBubble } from './MessageBubble';
 import { AdvancedTypingIndicator } from './AdvancedTypingIndicator';
 import { EnhancedFileManager } from './EnhancedFileManager';
+import SettingsPanel from './SettingsPanel';
 
 interface Message {
   id: string;
@@ -149,7 +150,6 @@ const ChatbotInterface = () => {
         name: file.name,
         type: 'image',
         url: fileUrl,
-        uploadDate: new Date(),
         analysis,
         metadata: {
           size: file.size,
@@ -455,9 +455,14 @@ const ChatbotInterface = () => {
                   {useMedicalExperts ? 'Medical AI On' : 'Medical AI Off'}
                 </Button>
                 
-                <Button variant="ghost" size="icon">
-                  <Settings className="w-5 h-5" />
-                </Button>
+                <SettingsPanel
+                  useMedicalExperts={useMedicalExperts}
+                  onToggleMedicalExperts={setUseMedicalExperts}
+                >
+                  <Button variant="ghost" size="icon">
+                    <Settings className="w-5 h-5" />
+                  </Button>
+                </SettingsPanel>
               </div>
             </div>
           </div>
