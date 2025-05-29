@@ -17,6 +17,7 @@ import { AdvancedTypingIndicator } from './AdvancedTypingIndicator';
 import { EnhancedFileManager } from './EnhancedFileManager';
 import SettingsPanel from './SettingsPanel';
 import FileUploadDialog from './FileUploadDialog';
+import { VoiceRecorder } from './VoiceRecorder';
 
 interface Message {
   id: string;
@@ -376,6 +377,16 @@ const ChatbotInterface = () => {
     // Store feedback for improving responses
     localStorage.setItem(`feedback_${messageId}`, type);
   };
+  const handleVoiceTranscription = (transcription: string) => {
+    console.log('Voice transcription received:', transcription);
+    setInputValue(transcription);
+    inputRef.current?.focus();
+    
+    // Optional: Auto-send if the transcription seems complete
+    // Uncomment the next line if you want auto-send behavior
+    // setTimeout(() => handleSend(transcription), 500);
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -461,13 +472,19 @@ const ChatbotInterface = () => {
           </div>
         </div>
 
-        {/* Input Area - Mobile Optimized */}
+        {/* Input Area - Mobile Optimized with Voice Recorder */}
         <div className="mt-4 sm:mt-6">
           <div className={cn("backdrop-blur-md bg-glass-white border rounded-2xl sm:rounded-3xl shadow-2xl transition-all duration-300", isFocused ? "border-saffron-400 shadow-saffron-400/30" : "border-glass-border")}>
             <div className="flex items-end p-3 sm:p-4 space-x-2 sm:space-x-4">
               <div className="flex-1">
-                <input ref={inputRef} type="text" value={inputValue} onChange={e => setInputValue(e.target.value)} onKeyPress={handleKeyPress} onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)} placeholder="Ask me about your uploaded files or any health-related question..." className="w-full bg-transparent text-white placeholder-gray-400 focus:outline-none text-sm sm:text-lg focus-glow-gold" />
+                <input ref={inputRef} type="text" value={inputValue} onChange={e => setInputValue(e.target.value)} onKeyPress={handleKeyPress} onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)} placeholder="Ask me about your uploaded files, speak your question, or type here..." className="w-full bg-transparent text-white placeholder-gray-400 focus:outline-none text-sm sm:text-lg focus-glow-gold" />
               </div>
+              
+              {/* Voice Recorder Button */}
+              <VoiceRecorder
+                onTranscription={handleVoiceTranscription}
+                disabled={typingState.isTyping}
+              />
               
               {/* Upload Buttons - Touch Optimized with Saffron Theme */}
               <div className="flex space-x-1 sm:space-x-2">
