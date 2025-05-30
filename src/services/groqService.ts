@@ -55,7 +55,21 @@ export const generateGroqResponse = async (messages: GroqMessage[]): Promise<str
 
 // Detect if the query is medical/health-related
 const detectMedicalQuery = async (messages: GroqMessage[]): Promise<boolean> => {
-  const lastMessage = messages[messages.length - 1]?.content || '';
+  const lastMessage = messages[messages.length - 1];
+  if (!lastMessage) return false;
+  
+  // Handle different content types
+  let textContent = '';
+  if (typeof lastMessage.content === 'string') {
+    textContent = lastMessage.content;
+  } else if (Array.isArray(lastMessage.content)) {
+    // Extract text from array content
+    textContent = lastMessage.content
+      .filter(item => item.type === 'text' && item.text)
+      .map(item => item.text)
+      .join(' ');
+  }
+  
   const medicalKeywords = [
     'symptom', 'disease', 'medicine', 'treatment', 'diagnosis', 'health', 'pain',
     'ayurveda', 'herbs', 'doshas', 'vata', 'pitta', 'kapha', 'chakra', 'pranayama',
@@ -64,7 +78,7 @@ const detectMedicalQuery = async (messages: GroqMessage[]): Promise<boolean> => 
   ];
   
   return medicalKeywords.some(keyword => 
-    lastMessage.toLowerCase().includes(keyword.toLowerCase())
+    textContent.toLowerCase().includes(keyword.toLowerCase())
   );
 };
 
@@ -334,9 +348,23 @@ export const generateReasoningResponse = async (messages: GroqMessage[], context
 
 // Enhanced medical query detection for reasoning tasks
 const detectMedicalReasoningQuery = async (messages: GroqMessage[], context?: string): Promise<boolean> => {
-  const lastMessage = messages[messages.length - 1]?.content || '';
+  const lastMessage = messages[messages.length - 1];
+  if (!lastMessage) return false;
+  
+  // Handle different content types
+  let textContent = '';
+  if (typeof lastMessage.content === 'string') {
+    textContent = lastMessage.content;
+  } else if (Array.isArray(lastMessage.content)) {
+    // Extract text from array content
+    textContent = lastMessage.content
+      .filter(item => item.type === 'text' && item.text)
+      .map(item => item.text)
+      .join(' ');
+  }
+  
   const contextText = context || '';
-  const combinedText = `${lastMessage} ${contextText}`.toLowerCase();
+  const combinedText = `${textContent} ${contextText}`.toLowerCase();
   
   const medicalReasoningKeywords = [
     // Medical reasoning terms
@@ -562,7 +590,7 @@ const generateStandardReasoningResponse = async (messages: GroqMessage[], contex
   const systemMessage = context 
     ? `You are a helpful AI assistant developed by a group of researchers with advanced reasoning capabilities. Use the following context to answer questions: ${context}`
     : 'You are a helpful AI assistant developed by a group of researchers with advanced reasoning capabilities. Provide detailed, logical responses to complex questions.';
-
+  
   const enhancedMessages = [
     {
       role: 'system',
