@@ -1,7 +1,14 @@
 
 // moeMedicalGroq.ts
-const GROQ_API_KEY = "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";
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+const getApiKey = (): string => {
+  const apiKey = localStorage.getItem('groq_api_key');
+  if (!apiKey) {
+    throw new Error('Groq API key not configured. Please add your API key in Settings.');
+  }
+  return apiKey;
+};
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -145,10 +152,12 @@ export const generateMoEMedicalResponse = async (
   }
 
   // Execute API call
+  const apiKey = getApiKey();
+  
   const response = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${GROQ_API_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload),
@@ -157,6 +166,11 @@ export const generateMoEMedicalResponse = async (
   if (!response.ok) {
     const errorText = await response.text();
     console.error(`Error calling ${expertType} expert:`, errorText);
+    
+    if (response.status === 401) {
+      throw new Error('Invalid API key. Please check your Groq API key in Settings.');
+    }
+    
     throw new Error(`Groq API error (${expertType}): ${response.status} - ${errorText}`);
   }
 
