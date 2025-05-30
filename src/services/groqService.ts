@@ -1,14 +1,7 @@
 import {generateMoEMedicalResponse} from './moeMedicalGroq';
 
+const GROQ_API_KEY = "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";
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-
-const getApiKey = (): string => {
-  const apiKey = localStorage.getItem('groq_api_key');
-  if (!apiKey) {
-    throw new Error('Groq API key not configured. Please add your API key in Settings.');
-  }
-  return apiKey;
-};
 
 export interface GroqMessage {
   role: 'system' | 'user' | 'assistant';
@@ -46,9 +39,6 @@ export const generateGroqResponse = async (messages: GroqMessage[]): Promise<str
     }
   } catch (error) {
     console.error('Error in enhanced Groq API call:', error);
-    if (error instanceof Error && error.message.includes('API key')) {
-      throw new Error('Please configure your Groq API key in Settings to use AI features.');
-    }
     throw new Error('Failed to generate response. Please try again.');
   }
 };
@@ -209,12 +199,10 @@ const generateStandardResponse = async (messages: GroqMessage[]): Promise<string
 
 // Core API call function
 const callGroqAPI = async (messages: any[], config: any): Promise<string> => {
-  const apiKey = getApiKey();
-  
   const response = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
+      'Authorization': `Bearer ${GROQ_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -226,11 +214,6 @@ const callGroqAPI = async (messages: any[], config: any): Promise<string> => {
   if (!response.ok) {
     const errorText = await response.text();
     console.error('Groq API error:', response.status, errorText);
-    
-    if (response.status === 401) {
-      throw new Error('Invalid API key. Please check your Groq API key in Settings.');
-    }
-    
     throw new Error(`Groq API error: ${response.status} - ${errorText}`);
   }
 
@@ -253,7 +236,6 @@ const handleMedicalError = (error: Error): string => {
 export const generateVisionResponse = async (imageBase64: string, userQuestion: string): Promise<string> => {
   try {
     console.log('Calling Groq Vision API for image analysis');
-    const apiKey = getApiKey();
     
     const messages: GroqMessage[] = [
       {
@@ -280,7 +262,7 @@ export const generateVisionResponse = async (imageBase64: string, userQuestion: 
     const response = await fetch(GROQ_API_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -294,11 +276,6 @@ export const generateVisionResponse = async (imageBase64: string, userQuestion: 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Groq Vision API error:', response.status, errorText);
-      
-      if (response.status === 401) {
-        throw new Error('Invalid API key. Please check your Groq API key in Settings.');
-      }
-      
       throw new Error(`Groq Vision API error: ${response.status} - ${errorText}`);
     }
 
@@ -307,9 +284,6 @@ export const generateVisionResponse = async (imageBase64: string, userQuestion: 
     return data.choices[0]?.message?.content || 'Sorry, I could not analyze the image.';
   } catch (error) {
     console.error('Error calling Groq Vision API:', error);
-    if (error instanceof Error && error.message.includes('API key')) {
-      throw error;
-    }
     throw new Error('Failed to analyze image. Please try again.');
   }
 };
@@ -579,12 +553,10 @@ const generateStandardReasoningResponse = async (messages: GroqMessage[], contex
 
 // Core reasoning API call function
 const callReasoningAPI = async (messages: any[], config: any): Promise<string> => {
-  const apiKey = getApiKey();
-  
   const response = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
+      'Authorization': `Bearer ${GROQ_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -597,11 +569,6 @@ const callReasoningAPI = async (messages: any[], config: any): Promise<string> =
   if (!response.ok) {
     const errorText = await response.text();
     console.error('Groq Reasoning API error:', response.status, errorText);
-    
-    if (response.status === 401) {
-      throw new Error('Invalid API key. Please check your Groq API key in Settings.');
-    }
-    
     throw new Error(`Groq Reasoning API error: ${response.status} - ${errorText}`);
   }
 
