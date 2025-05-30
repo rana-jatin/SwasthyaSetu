@@ -104,7 +104,7 @@ const generateModernMedicalResponse = async (messages: GroqMessage[]): Promise<s
   ];
   
   return await callGroqAPI(enhancedMessages, {
-    model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
+    model: 'qwen-qwq-32b',
     temperature: 0.3, // Lower for medical accuracy
     max_tokens: 1024,
   });
@@ -129,7 +129,7 @@ const generateAyurvedicResponse = async (messages: GroqMessage[]): Promise<strin
   ];
   
   return await callGroqAPI(enhancedMessages, {
-    model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
+    model: 'qwen-qwq-32b',
     temperature: 0.4,
     max_tokens: 1024,
   });
