@@ -1,6 +1,6 @@
 import {generateMoEMedicalResponse} from './moeMedicalGroq';
 
-const GROQ_API_KEY = "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";
+const GROQ_API_KEY = "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";
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 export interface GroqMessage {
