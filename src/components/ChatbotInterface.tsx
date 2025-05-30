@@ -442,8 +442,8 @@ const ChatbotInterface = () => {
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Button onClick={() => setUseMedicalExperts(!useMedicalExperts)} variant={useMedicalExperts ? "default" : "secondary"} className="">
                   <Stethoscope className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">{useMedicalExperts ? 'Medical Mode On' : 'Medical Mode Off'}</span>
-                  <span className="sm:hidden">{useMedicalExperts ? 'Medical On' : 'Medical Off'}</span>
+                  <span className="hidden sm:inline">{useMedicalExperts ? 'Medical Mode Off' : 'Medical Mode On'}</span>
+                  <span className="sm:hidden">{useMedicalExperts ? 'Medical Off' : 'Medical On'}</span>
                 </Button>
                 
                 <SettingsPanel useMedicalExperts={useMedicalExperts} onToggleMedicalExperts={setUseMedicalExperts}>
