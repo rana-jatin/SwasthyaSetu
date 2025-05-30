@@ -33,7 +33,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-white">AI Mode</h3>
             <div className="grid grid-cols-1 gap-2">
-              <Button onClick={() => onToggleMedicalExperts(true)} variant={useMedicalExperts ? "default" : "secondary"} className={cn("justify-start gap-3 h-auto p-3", useMedicalExperts ? "bg-green-600 hover:bg-green-700 text-white" : "bg-gray-700 hover:bg-gray-600 text-gray-300")}>
+              <Button onClick={() => onToggleMedicalExperts(false)} variant={useMedicalExperts ? "default" : "secondary"} className={cn("justify-start gap-3 h-auto p-3", useMedicalExperts ? "bg-green-600 hover:bg-green-700 text-white" : "bg-gray-700 hover:bg-gray-600 text-gray-300")}>
                 <Stethoscope className="w-4 h-4" />
                 <div className="text-left">
                   <div className="font-medium">Medical Expert AI</div>
@@ -41,7 +41,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </div>
               </Button>
               
-              <Button onClick={() => onToggleMedicalExperts(false)} variant={!useMedicalExperts ? "default" : "secondary"} className={cn("justify-start gap-3 h-auto p-3", !useMedicalExperts ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-gray-700 hover:bg-gray-600 text-gray-300")}>
+              <Button onClick={() => onToggleMedicalExperts(true)} variant={!useMedicalExperts ? "default" : "secondary"} className={cn("justify-start gap-3 h-auto p-3", !useMedicalExperts ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-gray-700 hover:bg-gray-600 text-gray-300")}>
                 <Brain className="w-4 h-4" />
                 <div className="text-left">
                   <div className="font-medium">General AI</div>
