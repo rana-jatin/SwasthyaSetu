@@ -1,7 +1,4 @@
-import {generateMoEMedicalResponse} from './moeMedicalGroq';
-
-const GROQ_API_KEY = "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";
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+import { generateMoEMedicalResponse } from './moeMedicalGroq';
 
 export interface GroqMessage {
   role: 'system' | 'user' | 'assistant';
@@ -25,9 +22,30 @@ export interface FileAnalysisResult {
   };
 }
 
+// Get API key from localStorage
+const getGroqApiKey = (): string | null => {
+  return localStorage.getItem('groq_api_key');
+};
+
+// Validate API key format
+const validateApiKey = (apiKey: string): boolean => {
+  return apiKey && apiKey.startsWith('gsk_') && apiKey.length > 20;
+};
+
+// Check if API key is configured
+const isApiKeyConfigured = (): boolean => {
+  const apiKey = getGroqApiKey();
+  return apiKey !== null && validateApiKey(apiKey);
+};
+
 export const generateGroqResponse = async (messages: GroqMessage[]): Promise<string> => {
   try {
     console.log('Calling Enhanced Medical Groq API with messages:', messages.length);
+    
+    // Check if API key is configured
+    if (!isApiKeyConfigured()) {
+      throw new Error('API_KEY_NOT_CONFIGURED');
+    }
     
     // Detect if query is medical/health-related
     const isMedicalQuery = await detectMedicalQuery(messages);
@@ -39,6 +57,16 @@ export const generateGroqResponse = async (messages: GroqMessage[]): Promise<str
     }
   } catch (error) {
     console.error('Error in enhanced Groq API call:', error);
+    
+    if (error instanceof Error) {
+      if (error.message === 'API_KEY_NOT_CONFIGURED') {
+        throw new Error('Please configure your Groq API key in the settings panel to use the AI assistant.');
+      }
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        throw new Error('Invalid API key. Please check your Groq API key in the settings panel.');
+      }
+    }
+    
     throw new Error('Failed to generate response. Please try again.');
   }
 };
@@ -46,6 +74,18 @@ export const generateGroqResponse = async (messages: GroqMessage[]): Promise<str
 // Detect if the query is medical/health-related
 const detectMedicalQuery = async (messages: GroqMessage[]): Promise<boolean> => {
   const lastMessage = messages[messages.length - 1]?.content || '';
+  
+  // Handle both string and array content types
+  let messageText = '';
+  if (typeof lastMessage === 'string') {
+    messageText = lastMessage;
+  } else if (Array.isArray(lastMessage)) {
+    messageText = lastMessage
+      .filter(item => item.type === 'text' && item.text)
+      .map(item => item.text)
+      .join(' ');
+  }
+  
   const medicalKeywords = [
     'symptom', 'disease', 'medicine', 'treatment', 'diagnosis', 'health', 'pain',
     'ayurveda', 'herbs', 'doshas', 'vata', 'pitta', 'kapha', 'chakra', 'pranayama',
@@ -54,7 +94,7 @@ const detectMedicalQuery = async (messages: GroqMessage[]): Promise<boolean> => 
   ];
   
   return medicalKeywords.some(keyword => 
-    lastMessage.toLowerCase().includes(keyword.toLowerCase())
+    messageText.toLowerCase().includes(keyword.toLowerCase())
   );
 };
 
@@ -105,7 +145,7 @@ const generateModernMedicalResponse = async (messages: GroqMessage[]): Promise<s
   
   return await callGroqAPI(enhancedMessages, {
     model: 'qwen-qwq-32b',
-    temperature: 0.3, // Lower for medical accuracy
+    temperature: 0.3,
     max_tokens: 1024,
   });
 };
@@ -183,8 +223,8 @@ const synthesizeMedicalResponses = async (responses: string[], originalMessages:
   
   return await callGroqAPI(synthesisPrompt, {
     model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
-    temperature: 0.2, // Very low for synthesis accuracy
-    max_tokens: 1536, // Larger for comprehensive synthesis
+    temperature: 0.2,
+    max_tokens: 1536,
   });
 };
 
@@ -199,10 +239,16 @@ const generateStandardResponse = async (messages: GroqMessage[]): Promise<string
 
 // Core API call function
 const callGroqAPI = async (messages: any[], config: any): Promise<string> => {
-  const response = await fetch(GROQ_API_URL, {
+  const apiKey = getGroqApiKey();
+  
+  if (!apiKey || !validateApiKey(apiKey)) {
+    throw new Error('Invalid or missing API key');
+  }
+
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${GROQ_API_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -221,21 +267,13 @@ const callGroqAPI = async (messages: any[], config: any): Promise<string> => {
   return data.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
 };
 
-// Additional utility functions for enhanced medical accuracy
-const addMedicalSafetyDisclaimer = (response: string): string => {
-  const disclaimer = "\n\n⚠️ Medical Disclaimer: This information is for educational purposes only and should not replace professional medical advice. Always consult with qualified healthcare providers for medical concerns.";
-  return response + disclaimer;
-};
-
-// Enhanced error handling for medical queries
-const handleMedicalError = (error: Error): string => {
-  console.error('Medical query error:', error);
-  return "I apologize, but I'm unable to provide medical information at this time. Please consult with a qualified healthcare professional for medical advice and concerns.";
-};
-
 export const generateVisionResponse = async (imageBase64: string, userQuestion: string): Promise<string> => {
   try {
     console.log('Calling Groq Vision API for image analysis');
+    
+    if (!isApiKeyConfigured()) {
+      throw new Error('Please configure your Groq API key in the settings panel to analyze images.');
+    }
     
     const messages: GroqMessage[] = [
       {
@@ -259,10 +297,11 @@ export const generateVisionResponse = async (imageBase64: string, userQuestion: 
       }
     ];
 
-    const response = await fetch(GROQ_API_URL, {
+    const apiKey = getGroqApiKey();
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -292,6 +331,10 @@ export const generateReasoningResponse = async (messages: GroqMessage[], context
   try {
     console.log('Calling Enhanced Medical Reasoning API');
     
+    if (!isApiKeyConfigured()) {
+      throw new Error('Please configure your Groq API key in the settings panel to use reasoning features.');
+    }
+    
     // Detect if query is medical/health-related
     const isMedicalQuery = await detectMedicalReasoningQuery(messages, context);
     
@@ -310,22 +353,28 @@ export const generateReasoningResponse = async (messages: GroqMessage[], context
 const detectMedicalReasoningQuery = async (messages: GroqMessage[], context?: string): Promise<boolean> => {
   const lastMessage = messages[messages.length - 1]?.content || '';
   const contextText = context || '';
-  const combinedText = `${lastMessage} ${contextText}`.toLowerCase();
+  
+  let messageText = '';
+  if (typeof lastMessage === 'string') {
+    messageText = lastMessage;
+  } else if (Array.isArray(lastMessage)) {
+    messageText = lastMessage
+      .filter(item => item.type === 'text' && item.text)
+      .map(item => item.text)
+      .join(' ');
+  }
+  
+  const combinedText = `${messageText} ${contextText}`.toLowerCase();
   
   const medicalReasoningKeywords = [
-    // Medical reasoning terms
     'diagnosis', 'differential diagnosis', 'pathophysiology', 'etiology', 'prognosis',
     'clinical reasoning', 'medical case', 'symptom analysis', 'disease mechanism',
     'pharmacology', 'drug interaction', 'side effects', 'contraindication',
     'treatment protocol', 'therapeutic approach', 'evidence-based medicine',
-    
-    // Ayurvedic reasoning terms
     'dosha imbalance', 'vata analysis', 'pitta assessment', 'kapha evaluation',
     'prakriti assessment', 'vikriti analysis', 'nadi pariksha', 'pulse diagnosis',
     'rasa', 'virya', 'vipaka', 'prabhava', 'ayurvedic reasoning', 'classical texts',
     'charaka samhita', 'sushruta samhita', 'ashtanga hridaya',
-    
-    // General medical terms
     'symptom', 'disease', 'medicine', 'treatment', 'health analysis', 'medical reasoning',
     'clinical decision', 'patient case', 'therapeutic reasoning', 'drug mechanism',
     'ayurveda', 'herbs', 'doshas', 'chakra', 'pranayama', 'wellness analysis'
@@ -338,7 +387,6 @@ const detectMedicalReasoningQuery = async (messages: GroqMessage[], context?: st
 const generateMedicalReasoningEnsemble = async (messages: GroqMessage[], context?: string): Promise<string> => {
   console.log('Generating medical reasoning ensemble response');
   
-  // Parallel expert reasoning consultations
   const expertPromises = [
     generateClinicalReasoningResponse(messages, context),
     generateAyurvedicReasoningResponse(messages, context),
@@ -356,7 +404,6 @@ const generateMedicalReasoningEnsemble = async (messages: GroqMessage[], context
       throw new Error('All medical reasoning experts failed to respond');
     }
     
-    // Synthesize responses using advanced reasoning ensemble
     return await synthesizeMedicalReasoningResponses(validResponses, messages, context);
   } catch (error) {
     console.error('Medical reasoning ensemble failed, falling back to standard:', error);
@@ -390,7 +437,7 @@ const generateClinicalReasoningResponse = async (messages: GroqMessage[], contex
   ];
   
   return await callReasoningAPI(enhancedMessages, {
-    temperature: 0.2, // Very low for clinical accuracy
+    temperature: 0.2,
     max_tokens: 1536,
   });
 };
@@ -487,7 +534,7 @@ const generateEvidenceBasedReasoningResponse = async (messages: GroqMessage[], c
   ];
   
   return await callReasoningAPI(enhancedMessages, {
-    temperature: 0.15, // Lowest for evidence-based accuracy
+    temperature: 0.15,
     max_tokens: 1536,
   });
 };
@@ -526,8 +573,8 @@ const synthesizeMedicalReasoningResponses = async (responses: string[], original
   ];
   
   return await callReasoningAPI(synthesisPrompt, {
-    temperature: 0.1, // Extremely low for synthesis accuracy
-    max_tokens: 2048, // Larger for comprehensive synthesis
+    temperature: 0.1,
+    max_tokens: 2048,
   });
 };
 
@@ -553,10 +600,16 @@ const generateStandardReasoningResponse = async (messages: GroqMessage[], contex
 
 // Core reasoning API call function
 const callReasoningAPI = async (messages: any[], config: any): Promise<string> => {
-  const response = await fetch(GROQ_API_URL, {
+  const apiKey = getGroqApiKey();
+  
+  if (!apiKey || !validateApiKey(apiKey)) {
+    throw new Error('Invalid or missing API key');
+  }
+
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${GROQ_API_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -574,21 +627,4 @@ const callReasoningAPI = async (messages: any[], config: any): Promise<string> =
 
   const data = await response.json();
   return data.choices[0]?.message?.content || 'Sorry, I could not generate a reasoning response.';
-};
-
-// Enhanced reasoning validation
-const validateMedicalReasoning = (response: string): boolean => {
-  const requiredElements = [
-    'reasoning', 'analysis', 'evidence', 'conclusion'
-  ];
-  
-  return requiredElements.some(element => 
-    response.toLowerCase().includes(element)
-  );
-};
-
-// Add medical reasoning disclaimer
-const addMedicalReasoningDisclaimer = (response: string): string => {
-  const disclaimer = "\n\n⚠️ Medical Reasoning Disclaimer: This analysis is for educational and research purposes only. The reasoning presented should not replace professional medical judgment or clinical decision-making. Always consult qualified healthcare professionals for medical diagnosis and treatment decisions.";
-  return response + disclaimer;
 };

@@ -1,6 +1,14 @@
 
-// moeMedicalGroq.ts
-const GROQ_API_KEY = "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";
+// Get API key from localStorage
+const getGroqApiKey = (): string | null => {
+  return localStorage.getItem('groq_api_key');
+};
+
+// Validate API key format
+const validateApiKey = (apiKey: string): boolean => {
+  return apiKey && apiKey.startsWith('gsk_') && apiKey.length > 20;
+};
+
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 /* ------------------------------------------------------------------ */
@@ -102,6 +110,12 @@ export const generateMoEMedicalResponse = async (
   input: string | GroqMessage[],
   options?: { expertType?: ExpertType }
 ): Promise<string> => {
+  // Check if API key is configured
+  const apiKey = getGroqApiKey();
+  if (!apiKey || !validateApiKey(apiKey)) {
+    throw new Error('Please configure your Groq API key in the settings panel to use the medical AI.');
+  }
+
   // Determine whether we're given a string prompt or full message array
   let expertType: ExpertType;
   let messages: GroqMessage[];
@@ -148,7 +162,7 @@ export const generateMoEMedicalResponse = async (
   const response = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${GROQ_API_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload),
@@ -157,6 +171,11 @@ export const generateMoEMedicalResponse = async (
   if (!response.ok) {
     const errorText = await response.text();
     console.error(`Error calling ${expertType} expert:`, errorText);
+    
+    if (response.status === 401) {
+      throw new Error('Invalid API key. Please check your Groq API key in the settings panel.');
+    }
+    
     throw new Error(`Groq API error (${expertType}): ${response.status} - ${errorText}`);
   }
 
